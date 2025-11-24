@@ -1,990 +1,2768 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>System 4x7: Productivity Edition</title>
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- React & ReactDOM -->
-    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-    
+    <script
+      crossorigin
+      src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"
+    ></script>
+
     <!-- Recharts Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.10.3/Recharts.min.js"></script>
-    
+
     <!-- Babel for JSX -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 
     <style>
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .recharts-wrapper { margin: 0 auto; }
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+      .recharts-wrapper {
+        margin: 0 auto;
+      }
     </style>
-</head>
-<body class="bg-gray-50 text-slate-800 font-sans">
+  </head>
+  <body class="bg-gray-50 text-slate-800 font-sans">
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
-        import { 
-            Inbox, Archive, Calendar as CalendarIcon, Clock, UserMinus, Layers, 
-            CheckSquare, Play, Plus, Trash2, CheckCircle, ArrowRight, RefreshCw, 
-            Menu, X, Download, Upload, RotateCcw, Check, Timer, Pause, Square,
-            BarChart2, PieChart as PieChartIcon, Activity, History, CornerDownRight, 
-            Folder, FileText, Trash, Settings, Edit2, AlertCircle
-        } from 'https://esm.sh/lucide-react@0.263.1';
+      import {
+        Inbox,
+        Archive,
+        Calendar as CalendarIcon,
+        Clock,
+        UserMinus,
+        Layers,
+        CheckSquare,
+        Play,
+        Plus,
+        Trash2,
+        CheckCircle,
+        ArrowRight,
+        RefreshCw,
+        Menu,
+        X,
+        Download,
+        Upload,
+        RotateCcw,
+        Check,
+        Timer,
+        Pause,
+        Square,
+        BarChart2,
+        PieChart as PieChartIcon,
+        Activity,
+        History,
+        CornerDownRight,
+        Folder,
+        FileText,
+        Trash,
+        Settings,
+        Edit2,
+        AlertCircle,
+      } from "https://esm.sh/lucide-react@0.263.1";
 
-        const { useState, useEffect, useRef, useMemo } = React;
-        const Recharts = window.Recharts || {};
-        const { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } = Recharts;
+      const { useState, useEffect, useRef, useMemo } = React;
+      const Recharts = window.Recharts || {};
+      const {
+        PieChart,
+        Pie,
+        Cell,
+        BarChart,
+        Bar,
+        XAxis,
+        YAxis,
+        Tooltip,
+        Legend,
+        ResponsiveContainer,
+      } = Recharts;
 
-        // --- Configuration ---
+      // --- Configuration ---
 
-        // Base colors for system categories
-        const SYSTEM_COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1', '#64748b'];
-        // Palette for custom categories
-        const CUSTOM_PALETTE = ['#0ea5e9', '#84cc16', '#d946ef', '#f97316', '#14b8a6'];
+      const SYSTEM_COLORS = [
+        "#4f46e5",
+        "#10b981",
+        "#f59e0b",
+        "#ef4444",
+        "#8b5cf6",
+        "#ec4899",
+        "#6366f1",
+        "#64748b",
+      ];
+      const CUSTOM_PALETTE = [
+        "#0ea5e9",
+        "#84cc16",
+        "#d946ef",
+        "#f97316",
+        "#14b8a6",
+      ];
 
-        const DEFAULT_CATEGORIES = [
-            { id: 'sys_1', name: "Работа", type: 'system', color: SYSTEM_COLORS[0] },
-            { id: 'sys_2', name: "Быт/Жизнь", type: 'system', color: SYSTEM_COLORS[1] },
-            { id: 'sys_3', name: "Здоровье", type: 'system', color: SYSTEM_COLORS[2] },
-            { id: 'sys_4', name: "Отношения", type: 'system', color: SYSTEM_COLORS[3] },
-            { id: 'sys_5', name: "Обязательства", type: 'system', color: SYSTEM_COLORS[4] },
-            { id: 'sys_6', name: "Цілі", type: 'system', color: SYSTEM_COLORS[5] },
-            { id: 'sys_7', name: "Переписки", type: 'system', color: SYSTEM_COLORS[6] },
-            { id: 'sys_8', name: "Инфо", type: 'system', color: SYSTEM_COLORS[7] }
-        ];
+      const DEFAULT_CATEGORIES = [
+        {
+          id: "sys_1",
+          name: "Работа",
+          type: "system",
+          color: SYSTEM_COLORS[0],
+        },
+        {
+          id: "sys_2",
+          name: "Быт/Жизнь",
+          type: "system",
+          color: SYSTEM_COLORS[1],
+        },
+        {
+          id: "sys_3",
+          name: "Здоровье",
+          type: "system",
+          color: SYSTEM_COLORS[2],
+        },
+        {
+          id: "sys_4",
+          name: "Отношения",
+          type: "system",
+          color: SYSTEM_COLORS[3],
+        },
+        {
+          id: "sys_5",
+          name: "Обязательства",
+          type: "system",
+          color: SYSTEM_COLORS[4],
+        },
+        { id: "sys_6", name: "Цілі", type: "system", color: SYSTEM_COLORS[5] },
+        {
+          id: "sys_7",
+          name: "Переписки",
+          type: "system",
+          color: SYSTEM_COLORS[6],
+        },
+        { id: "sys_8", name: "Инфо", type: "system", color: SYSTEM_COLORS[7] },
+      ];
 
-        const SECTIONS = {
-            INBOX: 'inbox',
-            REFERENCE: 'reference',
-            SOMEDAY: 'someday',
-            WAITING: 'waiting',
-            CALENDAR: 'calendar',
-            PROJECTS: 'projects',
-            TODAY: 'today',
-            REVIEW: 'review',
-            PROCESS: 'process',
-            DONE: 'done',
-            PRODUCTIVITY: 'productivity',
-            SETTINGS: 'settings' // New Section
+      const SECTIONS = {
+        INBOX: "inbox",
+        REFERENCE: "reference",
+        SOMEDAY: "someday",
+        WAITING: "waiting",
+        CALENDAR: "calendar",
+        PROJECTS: "projects",
+        TODAY: "today",
+        REVIEW: "review",
+        PROCESS: "process",
+        DONE: "done",
+        PRODUCTIVITY: "productivity",
+        SETTINGS: "settings",
+      };
+
+      const INITIAL_TASKS_DEFAULT = [
+        {
+          id: 1,
+          title: "Изучить новые функции таймера",
+          category: "Инфо",
+          status: "inbox",
+          timestamp: Date.now(),
+          totalTime: 0,
+          sessions: [],
+        },
+      ];
+
+      // --- Helpers ---
+
+      const formatTime = (ms) => {
+        const seconds = Math.floor((ms / 1000) % 60);
+        const minutes = Math.floor((ms / 1000 / 60) % 60);
+        const hours = Math.floor(ms / 1000 / 60 / 60);
+        return `${hours > 0 ? hours + ":" : ""}${minutes
+          .toString()
+          .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+      };
+
+      const formatTimeText = (ms) => {
+        if (!ms) return "0 мин";
+        const minutes = Math.floor((ms / 1000 / 60) % 60);
+        const hours = Math.floor(ms / 1000 / 60 / 60);
+        if (hours > 0) return `${hours} ч ${minutes}мин`;
+        return `${minutes} мин`;
+      };
+
+      const formatDate = (ts) => new Date(ts).toLocaleDateString("ru-RU");
+
+      const getStatusLabel = (status) => {
+        const labels = {
+          inbox: "Входящие",
+          today: "Сегодня",
+          calendar: "Календарь",
+          waiting: "Ожидание",
+          someday: "Как-нибудь",
+          done: "Готово",
+          reference: "Инфо",
+        };
+        return labels[status] || status;
+      };
+
+      const getStatusColor = (status) => {
+        const colors = {
+          inbox: "bg-gray-100 text-gray-600",
+          today: "bg-indigo-100 text-indigo-700",
+          calendar: "bg-purple-100 text-purple-700",
+          waiting: "bg-orange-100 text-orange-700",
+          someday: "bg-yellow-100 text-yellow-700",
+          done: "bg-green-100 text-green-700",
+          reference: "bg-blue-100 text-blue-700",
+        };
+        return colors[status] || "bg-gray-100 text-gray-500";
+      };
+
+      // --- Main App ---
+
+      function System4x7App() {
+        const [tasks, setTasks] = useState(() => {
+          const saved = localStorage.getItem("system4x7_tasks_v2");
+          return saved ? JSON.parse(saved) : INITIAL_TASKS_DEFAULT;
+        });
+
+        const [categories, setCategories] = useState(() => {
+          const saved = localStorage.getItem("system4x7_categories");
+          return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
+        });
+
+        const [activeTimer, setActiveTimer] = useState(() => {
+          const saved = localStorage.getItem("system4x7_timer");
+          return saved
+            ? JSON.parse(saved)
+            : {
+                taskId: null,
+                startTime: null,
+                isRunning: false,
+                accumulated: 0,
+              };
+        });
+
+        const [activeSection, setActiveSection] = useState(SECTIONS.INBOX);
+        const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+        const [currentTime, setCurrentTime] = useState(Date.now());
+        const fileInputRef = useRef(null);
+
+        // состояние текущего месяца календаря
+        const [calendarDate, setCalendarDate] = useState(() => {
+          const d = new Date();
+          return { year: d.getFullYear(), month: d.getMonth() };
+        });
+
+        const goToPrevMonth = () => {
+          setCalendarDate((prev) => {
+            const m = prev.month - 1;
+            if (m < 0) return { year: prev.year - 1, month: 11 };
+            return { year: prev.year, month: m };
+          });
         };
 
-        const INITIAL_TASKS_DEFAULT = [
-            { id: 1, title: "Изучить новые функции таймера", category: "Инфо", status: "inbox", timestamp: Date.now(), totalTime: 0, sessions: [] },
-        ];
-
-        // --- Helpers ---
-
-        const formatTime = (ms) => {
-            const seconds = Math.floor((ms / 1000) % 60);
-            const minutes = Math.floor((ms / 1000 / 60) % 60);
-            const hours = Math.floor((ms / 1000 / 60 / 60));
-            return `${hours > 0 ? hours + ':' : ''}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        const goToNextMonth = () => {
+          setCalendarDate((prev) => {
+            const m = prev.month + 1;
+            if (m > 11) return { year: prev.year + 1, month: 0 };
+            return { year: prev.year, month: m };
+          });
         };
 
-        const formatTimeText = (ms) => {
-            if (!ms) return "0 мин";
-            const minutes = Math.floor((ms / 1000 / 60) % 60);
-            const hours = Math.floor((ms / 1000 / 60 / 60));
-            if (hours > 0) return `${hours} ч ${minutes} мин`;
-            return `${minutes} мин`;
+        // Persistence
+        useEffect(() => {
+          localStorage.setItem("system4x7_tasks_v2", JSON.stringify(tasks));
+        }, [tasks]);
+        useEffect(() => {
+          localStorage.setItem(
+            "system4x7_categories",
+            JSON.stringify(categories)
+          );
+        }, [categories]);
+        useEffect(() => {
+          localStorage.setItem("system4x7_timer", JSON.stringify(activeTimer));
+        }, [activeTimer]);
+
+        // Timer Tick
+        useEffect(() => {
+          let interval;
+          if (activeTimer.isRunning) {
+            interval = setInterval(() => {
+              setCurrentTime(Date.now());
+            }, 1000);
+          }
+          return () => clearInterval(interval);
+        }, [activeTimer.isRunning]);
+
+        // --- Category Management ---
+
+        const addCategory = (name) => {
+          const customCount = categories.filter(
+            (c) => c.type === "custom"
+          ).length;
+          if (customCount >= 3)
+            return alert("Максимум 3 пользовательские категории.");
+
+          const color = CUSTOM_PALETTE[customCount % CUSTOM_PALETTE.length];
+
+          setCategories((prev) => [
+            ...prev,
+            {
+              id: `cust_${Date.now()}`,
+              name: name,
+              type: "custom",
+              color: color,
+            },
+          ]);
         };
 
-        const formatDate = (ts) => new Date(ts).toLocaleDateString('ru-RU');
+        const updateCategoryName = (id, newName) => {
+          const oldCat = categories.find((c) => c.id === id);
+          if (!oldCat) return;
 
-        const getStatusLabel = (status) => {
-            const labels = {
-                inbox: 'Входящие',
-                today: 'Сегодня',
-                calendar: 'Календарь',
-                waiting: 'Ожидание',
-                someday: 'Как-нибудь',
-                done: 'Готово',
-                reference: 'Инфо'
-            };
-            return labels[status] || status;
+          setCategories((prev) =>
+            prev.map((c) => (c.id === id ? { ...c, name: newName } : c))
+          );
+          setTasks((prev) =>
+            prev.map((t) =>
+              t.category === oldCat.name ? { ...t, category: newName } : t
+            )
+          );
         };
 
-        const getStatusColor = (status) => {
-             const colors = {
-                inbox: 'bg-gray-100 text-gray-600',
-                today: 'bg-indigo-100 text-indigo-700',
-                calendar: 'bg-purple-100 text-purple-700',
-                waiting: 'bg-orange-100 text-orange-700',
-                someday: 'bg-yellow-100 text-yellow-700',
-                done: 'bg-green-100 text-green-700',
-                reference: 'bg-blue-100 text-blue-700'
-            };
-            return colors[status] || 'bg-gray-100 text-gray-500';
-        }
+        const deleteCategory = (id) => {
+          const catToDelete = categories.find((c) => c.id === id);
+          if (!catToDelete || catToDelete.type === "system") return;
 
-        // --- Main App ---
+          if (
+            confirm(
+              `Удалить категорию "${catToDelete.name}"? Задачи этой категории останутся, но потеряют цвет.`
+            )
+          ) {
+            setCategories((prev) => prev.filter((c) => c.id !== id));
+          }
+        };
 
-        function System4x7App() {
-            // Tasks State
-            const [tasks, setTasks] = useState(() => {
-                const saved = localStorage.getItem('system4x7_tasks_v2');
-                return saved ? JSON.parse(saved) : INITIAL_TASKS_DEFAULT;
-            });
+        // --- Actions ---
 
-            // Categories State
-            const [categories, setCategories] = useState(() => {
-                const saved = localStorage.getItem('system4x7_categories');
-                return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
-            });
+        const addTask = (task) => {
+          setTasks((prev) => [
+            ...prev,
+            {
+              ...task,
+              id: Date.now(),
+              timestamp: Date.now(),
+              status: "inbox",
+              totalTime: 0,
+              sessions: [],
+            },
+          ]);
+        };
 
-            // Timer State
-            const [activeTimer, setActiveTimer] = useState(() => {
-                const saved = localStorage.getItem('system4x7_timer');
-                return saved ? JSON.parse(saved) : { taskId: null, startTime: null, isRunning: false, accumulated: 0 };
-            });
+        const updateTask = (id, updates) => {
+          setTasks((prev) =>
+            prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
+          );
+        };
 
-            const [activeSection, setActiveSection] = useState(SECTIONS.INBOX);
-            const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-            const [currentTime, setCurrentTime] = useState(Date.now());
-            const fileInputRef = useRef(null);
+        const deleteTask = (id) => {
+          if (activeTimer.taskId === id) stopTimer();
+          setTasks((prev) => prev.filter((t) => t.id !== id));
+        };
 
-            // Persistence
-            useEffect(() => { localStorage.setItem('system4x7_tasks_v2', JSON.stringify(tasks)); }, [tasks]);
-            useEffect(() => { localStorage.setItem('system4x7_categories', JSON.stringify(categories)); }, [categories]);
-            useEffect(() => { localStorage.setItem('system4x7_timer', JSON.stringify(activeTimer)); }, [activeTimer]);
+        const updateTaskDate = (id, newDate) => {
+          const iso = newDate.toISOString();
+          setTasks((prev) =>
+            prev.map((t) => (t.id === id ? { ...t, dueDate: iso } : t))
+          );
+        };
 
-            // Timer Tick
-            useEffect(() => {
-                let interval;
-                if (activeTimer.isRunning) {
-                    interval = setInterval(() => { setCurrentTime(Date.now()); }, 1000);
+        // Timer Logic
+        const startTimer = (taskId) => {
+          if (activeTimer.taskId && activeTimer.taskId !== taskId) stopTimer();
+          setActiveTimer({
+            taskId,
+            startTime: Date.now(),
+            isRunning: true,
+            accumulated:
+              activeTimer.taskId === taskId ? activeTimer.accumulated : 0,
+          });
+        };
+
+        const pauseTimer = () => {
+          if (!activeTimer.taskId) return;
+          const sessionTime = Date.now() - activeTimer.startTime;
+          setActiveTimer((prev) => ({
+            ...prev,
+            isRunning: false,
+            accumulated: prev.accumulated + sessionTime,
+            startTime: null,
+          }));
+        };
+
+        const stopTimer = () => {
+          if (!activeTimer.taskId) return;
+          const sessionTime = activeTimer.isRunning
+            ? Date.now() - activeTimer.startTime
+            : 0;
+          const totalSessionTime = activeTimer.accumulated + sessionTime;
+
+          if (totalSessionTime > 1000) {
+            setTasks((prev) =>
+              prev.map((t) => {
+                if (t.id === activeTimer.taskId) {
+                  return {
+                    ...t,
+                    totalTime: (t.totalTime || 0) + totalSessionTime,
+                    sessions: [
+                      ...(t.sessions || []),
+                      {
+                        start: Date.now() - totalSessionTime,
+                        end: Date.now(),
+                        duration: totalSessionTime,
+                      },
+                    ],
+                  };
                 }
-                return () => clearInterval(interval);
-            }, [activeTimer.isRunning]);
-
-            // --- Category Management ---
-
-            const addCategory = (name) => {
-                const customCount = categories.filter(c => c.type === 'custom').length;
-                if (customCount >= 3) return alert("Максимум 3 пользовательские категории.");
-                
-                // Auto color selection from palette
-                const color = CUSTOM_PALETTE[customCount % CUSTOM_PALETTE.length];
-                
-                setCategories(prev => [...prev, {
-                    id: `cust_${Date.now()}`,
-                    name: name,
-                    type: 'custom',
-                    color: color
-                }]);
-            };
-
-            const updateCategoryName = (id, newName) => {
-                const oldCat = categories.find(c => c.id === id);
-                if (!oldCat) return;
-
-                // 1. Update Category List
-                setCategories(prev => prev.map(c => c.id === id ? { ...c, name: newName } : c));
-
-                // 2. Update ALL tasks history to preserve analytics
-                setTasks(prev => prev.map(t => t.category === oldCat.name ? { ...t, category: newName } : t));
-            };
-
-            const deleteCategory = (id) => {
-                const catToDelete = categories.find(c => c.id === id);
-                if (!catToDelete || catToDelete.type === 'system') return;
-
-                if (confirm(`Удалить категорию "${catToDelete.name}"? Задачи этой категории останутся, но потеряют цвет.`)) {
-                    setCategories(prev => prev.filter(c => c.id !== id));
-                }
-            };
-
-            // --- Actions ---
-            const addTask = (task) => {
-                setTasks(prev => [...prev, { 
-                    ...task, 
-                    id: Date.now(), 
-                    timestamp: Date.now(), 
-                    status: 'inbox',
-                    totalTime: 0, 
-                    sessions: [] 
-                }]);
-            };
-
-            const updateTask = (id, updates) => {
-                setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-            };
-
-            const deleteTask = (id) => {
-                if (activeTimer.taskId === id) stopTimer();
-                setTasks(prev => prev.filter(t => t.id !== id));
-            };
-
-            // Timer Logic
-            const startTimer = (taskId) => {
-                if (activeTimer.taskId && activeTimer.taskId !== taskId) stopTimer();
-                setActiveTimer({ taskId, startTime: Date.now(), isRunning: true, accumulated: activeTimer.taskId === taskId ? activeTimer.accumulated : 0 });
-            };
-
-            const pauseTimer = () => {
-                if (!activeTimer.taskId) return;
-                const sessionTime = Date.now() - activeTimer.startTime;
-                setActiveTimer(prev => ({ ...prev, isRunning: false, accumulated: prev.accumulated + sessionTime, startTime: null }));
-            };
-
-            const stopTimer = () => {
-                if (!activeTimer.taskId) return;
-                const sessionTime = activeTimer.isRunning ? (Date.now() - activeTimer.startTime) : 0;
-                const totalSessionTime = activeTimer.accumulated + sessionTime;
-
-                if (totalSessionTime > 1000) { 
-                    setTasks(prev => prev.map(t => {
-                        if (t.id === activeTimer.taskId) {
-                            return {
-                                ...t,
-                                totalTime: (t.totalTime || 0) + totalSessionTime,
-                                sessions: [...(t.sessions || []), { start: Date.now() - totalSessionTime, end: Date.now(), duration: totalSessionTime }]
-                            };
-                        }
-                        return t;
-                    }));
-                }
-                setActiveTimer({ taskId: null, startTime: null, isRunning: false, accumulated: 0 });
-            };
-
-            const getTaskDuration = (taskId) => {
-                if (activeTimer.taskId === taskId) {
-                    const currentSession = activeTimer.isRunning ? (currentTime - activeTimer.startTime) : 0;
-                    return activeTimer.accumulated + currentSession;
-                }
-                return 0;
-            };
-
-            // Helpers for Views
-            const getProjectName = (projectId) => {
-                const project = tasks.find(t => t.id === projectId);
-                return project ? project.title : null;
-            };
-
-            // Backup
-            const handleExport = () => {
-                const dataStr = JSON.stringify({ tasks, categories }, null, 2); // Export categories too
-                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-                const linkElement = document.createElement('a');
-                linkElement.setAttribute('href', dataUri);
-                linkElement.setAttribute('download', `planner_full_${new Date().toISOString().slice(0,10)}.json`);
-                linkElement.click();
-            };
-
-            const handleFileUpload = (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const imported = JSON.parse(e.target.result);
-                        if (imported.tasks && Array.isArray(imported.tasks)) {
-                            if(confirm("Заменить все данные?")) {
-                                setTasks(imported.tasks);
-                                if (imported.categories) setCategories(imported.categories);
-                            }
-                        } else if (Array.isArray(imported)) {
-                            // Legacy backup support
-                            if(confirm("Заменить все данные (формат v1)?")) setTasks(imported);
-                        }
-                    } catch (err) { alert("Ошибка файла"); }
-                };
-                reader.readAsText(file);
-                event.target.value = null;
-            };
-
-            // Render
-            const renderContent = () => {
-                const commonProps = { onDelete: deleteTask, onComplete: (id) => updateTask(id, { status: 'done' }), activeTimer, onStart: startTimer, onPause: pauseTimer, onStop: stopTimer, getDuration: getTaskDuration, getProjectName, categories };
-                
-                switch (activeSection) {
-                    case SECTIONS.INBOX: return <InboxView tasks={tasks.filter(t => t.status === 'inbox')} onAddTask={addTask} onStartProcess={() => setActiveSection(SECTIONS.PROCESS)} getProjectName={getProjectName} categories={categories} />;
-                    case SECTIONS.PROCESS: return <ProcessWizard tasks={tasks} onUpdateTask={updateTask} onComplete={() => setActiveSection(SECTIONS.INBOX)} categories={categories} />;
-                    case SECTIONS.TODAY: return <TodayView tasks={tasks.filter(t => t.status === 'today')} {...commonProps} />;
-                    case SECTIONS.PRODUCTIVITY: return <ProductivityView tasks={tasks} getProjectName={getProjectName} categories={categories} />;
-                    case SECTIONS.CALENDAR: return <ListView title="Календарь" icon={<CalendarIcon />} tasks={tasks.filter(t => t.status === 'calendar')} {...commonProps} />;
-                    case SECTIONS.PROJECTS: return <ProjectsView allTasks={tasks} projects={tasks.filter(t => t.status === 'projects')} onAddTask={addTask} {...commonProps} />;
-                    case SECTIONS.WAITING: return <ListView title="Лист поручений" icon={<UserMinus />} tasks={tasks.filter(t => t.status === 'waiting')} {...commonProps} />;
-                    case SECTIONS.SOMEDAY: return <ListView title="Как-нибудь" icon={<Clock />} tasks={tasks.filter(t => t.status === 'someday')} {...commonProps} />;
-                    case SECTIONS.REFERENCE: return <ListView title="Хранилище" icon={<Archive />} tasks={tasks.filter(t => t.status === 'reference')} {...commonProps} />;
-                    case SECTIONS.DONE: return <DoneView tasks={tasks.filter(t => t.status === 'done')} onDelete={deleteTask} onRepeat={(id) => updateTask(id, { status: 'inbox' })} getProjectName={getProjectName} categories={categories} />;
-                    case SECTIONS.REVIEW: return <ReviewView />;
-                    case SECTIONS.SETTINGS: return <SettingsView categories={categories} onAdd={addCategory} onUpdate={updateCategoryName} onDelete={deleteCategory} />;
-                    default: return null;
-                }
-            };
-
-            return (
-                <div className="flex h-screen bg-gray-50 text-slate-800 font-sans overflow-hidden">
-                    <div className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-xl transition-transform duration-300 ease-in-out md:relative md:translate-x-0 flex flex-col h-full`}>
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                            <h1 className="text-xl font-bold text-indigo-600 flex items-center gap-2"><CheckCircle className="fill-indigo-600 text-white" /> System 4x7</h1>
-                            <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-gray-400"><X size={20} /></button>
-                        </div>
-                        <nav className="flex-1 overflow-y-auto py-4">
-                            <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Сбор & Сортировка</div>
-                            <NavItem active={activeSection === SECTIONS.INBOX} onClick={() => setActiveSection(SECTIONS.INBOX)} icon={<Inbox size={18} />} label="Входящие" count={tasks.filter(t => t.status === 'inbox').length} alert={tasks.filter(t => t.status === 'inbox').length > 0} />
-                            <button onClick={() => setActiveSection(SECTIONS.PROCESS)} className="w-full text-left px-6 py-3 flex items-center gap-3 text-indigo-600 hover:bg-indigo-50 font-medium transition-colors"><RefreshCw size={18} className={activeSection === SECTIONS.PROCESS ? "animate-spin" : ""} /><span>Сортировка</span></button>
-                            
-                            <div className="mt-6 px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Действия</div>
-                            <NavItem active={activeSection === SECTIONS.TODAY} onClick={() => setActiveSection(SECTIONS.TODAY)} icon={<CheckSquare size={18} />} label="Сегодня" count={tasks.filter(t => t.status === 'today').length} />
-                            <NavItem active={activeSection === SECTIONS.PROJECTS} onClick={() => setActiveSection(SECTIONS.PROJECTS)} icon={<Layers size={18} />} label="Проекты" />
-                            <NavItem active={activeSection === SECTIONS.CALENDAR} onClick={() => setActiveSection(SECTIONS.CALENDAR)} icon={<CalendarIcon size={18} />} label="Календарь" />
-                            
-                            <div className="mt-6 px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Анализ</div>
-                            <NavItem active={activeSection === SECTIONS.PRODUCTIVITY} onClick={() => setActiveSection(SECTIONS.PRODUCTIVITY)} icon={<BarChart2 size={18} />} label="Продуктивность" />
-                            <NavItem active={activeSection === SECTIONS.REVIEW} onClick={() => setActiveSection(SECTIONS.REVIEW)} icon={<Play size={18} />} label="Ревизия" />
-                            
-                            <div className="mt-6 px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Архивы</div>
-                            <NavItem active={activeSection === SECTIONS.WAITING} onClick={() => setActiveSection(SECTIONS.WAITING)} icon={<UserMinus size={18} />} label="Лист поручений" />
-                            <NavItem active={activeSection === SECTIONS.SOMEDAY} onClick={() => setActiveSection(SECTIONS.SOMEDAY)} icon={<Clock size={18} />} label="Как-нибудь" />
-                            <NavItem active={activeSection === SECTIONS.REFERENCE} onClick={() => setActiveSection(SECTIONS.REFERENCE)} icon={<Archive size={18} />} label="Хранилище" />
-                            <NavItem active={activeSection === SECTIONS.DONE} onClick={() => setActiveSection(SECTIONS.DONE)} icon={<CheckCircle size={18} />} label="Выполнено" />
-                            
-                            <div className="mt-6 px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Система</div>
-                            <NavItem active={activeSection === SECTIONS.SETTINGS} onClick={() => setActiveSection(SECTIONS.SETTINGS)} icon={<Settings size={18} />} label="Настройки" />
-                        </nav>
-                        <div className="p-4 border-t bg-gray-50 flex gap-2">
-                            <button onClick={handleExport} className="flex-1 py-2 bg-white border rounded hover:bg-indigo-50 text-xs flex justify-center gap-1"><Download size={14}/>Скачать</button>
-                            <button onClick={() => fileInputRef.current.click()} className="flex-1 py-2 bg-white border rounded hover:bg-green-50 text-xs flex justify-center gap-1"><Upload size={14}/>Загрузить</button>
-                            <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".json" className="hidden" />
-                        </div>
-                    </div>
-
-                    <main className="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-8 relative">
-                        {!isSidebarOpen && <button onClick={() => setIsSidebarOpen(true)} className="absolute top-4 left-4 z-30 p-2 bg-white rounded shadow md:hidden"><Menu size={20} /></button>}
-                        
-                        {activeTimer.taskId && activeSection !== SECTIONS.TODAY && (
-                            <div className="mb-6 bg-indigo-600 text-white p-4 rounded-xl shadow-lg flex justify-between items-center animate-pulse">
-                                <div className="flex items-center gap-3">
-                                    <Timer className="animate-spin-slow" />
-                                    <div>
-                                        <div className="text-xs opacity-80">Таймер запущен</div>
-                                        <div className="font-bold">{tasks.find(t => t.id === activeTimer.taskId)?.title || 'Задача'}</div>
-                                    </div>
-                                </div>
-                                <div className="text-xl font-mono font-bold">{formatTime(getTaskDuration(activeTimer.taskId))}</div>
-                                <button onClick={() => setActiveSection(SECTIONS.TODAY)} className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-sm">Перейти</button>
-                            </div>
-                        )}
-
-                        <div className="max-w-5xl mx-auto">
-                            {renderContent()}
-                        </div>
-                    </main>
-                </div>
+                return t;
+              })
             );
-        }
+          }
+          setActiveTimer({
+            taskId: null,
+            startTime: null,
+            isRunning: false,
+            accumulated: 0,
+          });
+        };
 
-        // --- COMPONENTS ---
+        const getTaskDuration = (taskId) => {
+          if (activeTimer.taskId === taskId) {
+            const currentSession = activeTimer.isRunning
+              ? currentTime - activeTimer.startTime
+              : 0;
+            return activeTimer.accumulated + currentSession;
+          }
+          return 0;
+        };
 
-        const NavItem = ({ active, onClick, icon, label, count, alert }) => (
-            <button onClick={onClick} className={`w-full flex items-center justify-between px-6 py-3 text-sm font-medium transition-colors ${active ? 'bg-indigo-50 text-indigo-700 border-r-4 border-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}>
-                <div className="flex items-center gap-3">{icon}<span>{label}</span></div>
-                {count !== undefined && <span className={`px-2 py-0.5 rounded-full text-xs ${alert ? 'bg-red-100 text-red-600 font-bold' : 'bg-gray-100 text-gray-500'}`}>{count}</span>}
-            </button>
-        );
+        const getProjectName = (projectId) => {
+          const project = tasks.find((t) => t.id === projectId);
+          return project ? project.title : null;
+        };
 
-        const TimerControl = ({ taskId, isActive, isRunning, accumulated, onStart, onPause, onStop, getDuration }) => {
-            const duration = getDuration(taskId);
-            if (isActive) {
-                return (
-                    <div className="flex items-center gap-2 bg-indigo-50 p-1 rounded-lg border border-indigo-100">
-                        <div className="font-mono text-indigo-700 w-16 text-center font-bold text-sm">{formatTime(duration)}</div>
-                        {isRunning ? 
-                            <button onClick={onPause} className="p-1.5 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200" title="Пауза"><Pause size={14} /></button> : 
-                            <button onClick={() => onStart(taskId)} className="p-1.5 bg-green-100 text-green-700 rounded hover:bg-green-200" title="Продолжить"><Play size={14} /></button>
-                        }
-                        <button onClick={onStop} className="p-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200" title="Стоп и Сохранить"><Square size={14} /></button>
-                    </div>
-                );
+        // Backup
+        const handleExport = () => {
+          const dataStr = JSON.stringify({ tasks, categories }, null, 2);
+          const dataUri =
+            "data:application/json;charset=utf-8," +
+            encodeURIComponent(dataStr);
+          const linkElement = document.createElement("a");
+          linkElement.setAttribute("href", dataUri);
+          linkElement.setAttribute(
+            "download",
+            `planner_full_${new Date().toISOString().slice(0, 10)}.json`
+          );
+          linkElement.click();
+        };
+
+        const handleFileUpload = (event) => {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const imported = JSON.parse(e.target.result);
+              if (imported.tasks && Array.isArray(imported.tasks)) {
+                if (confirm("Заменить все данные?")) {
+                  setTasks(imported.tasks);
+                  if (imported.categories) setCategories(imported.categories);
+                }
+              } else if (Array.isArray(imported)) {
+                if (confirm("Заменить все данные (формат v1)?"))
+                  setTasks(imported);
+              }
+            } catch (err) {
+              alert("Ошибка файла");
             }
-            return (
-                <div className="flex items-center gap-2 text-gray-400 group-hover:text-gray-600">
-                     {accumulated > 0 && <span className="text-xs font-mono">{formatTime(accumulated)}</span>}
-                    <button onClick={() => onStart(taskId)} className="p-2 hover:bg-indigo-50 hover:text-indigo-600 rounded-full transition-colors" title="Запустить таймер"><Timer size={18} /></button>
+          };
+          reader.readAsText(file);
+          event.target.value = null;
+        };
+
+        const renderContent = () => {
+          const commonProps = {
+            onDelete: deleteTask,
+            onComplete: (id) => updateTask(id, { status: "done" }),
+            activeTimer,
+            onStart: startTimer,
+            onPause: pauseTimer,
+            onStop: stopTimer,
+            getDuration: getTaskDuration,
+            getProjectName,
+            categories,
+          };
+
+          switch (activeSection) {
+            case SECTIONS.INBOX:
+              return (
+                <InboxView
+                  tasks={tasks.filter((t) => t.status === "inbox")}
+                  onAddTask={addTask}
+                  onStartProcess={() => setActiveSection(SECTIONS.PROCESS)}
+                  getProjectName={getProjectName}
+                  categories={categories}
+                />
+              );
+            case SECTIONS.PROCESS:
+              return (
+                <ProcessWizard
+                  tasks={tasks}
+                  onUpdateTask={updateTask}
+                  onComplete={() => setActiveSection(SECTIONS.INBOX)}
+                  categories={categories}
+                />
+              );
+            case SECTIONS.TODAY:
+              return (
+                <TodayView
+                  tasks={tasks.filter((t) => t.status === "today")}
+                  {...commonProps}
+                />
+              );
+            case SECTIONS.PRODUCTIVITY:
+              return (
+                <ProductivityView
+                  tasks={tasks}
+                  getProjectName={getProjectName}
+                  categories={categories}
+                />
+              );
+            case SECTIONS.CALENDAR:
+              return (
+                <CalendarView
+                  tasks={tasks}
+                  categories={categories}
+                  calendarDate={calendarDate}
+                  onPrevMonth={goToPrevMonth}
+                  onNextMonth={goToNextMonth}
+                  onUpdateTaskDate={updateTaskDate}
+                  getProjectName={getProjectName}
+                  onMarkDone={(id) => updateTask(id, { status: "done" })}
+                />
+              );
+            case SECTIONS.PROJECTS:
+              return (
+                <ProjectsView
+                  allTasks={tasks}
+                  projects={tasks.filter((t) => t.status === "projects")}
+                  onAddTask={addTask}
+                  {...commonProps}
+                />
+              );
+            case SECTIONS.WAITING:
+              return (
+                <ListView
+                  title="Лист поручений"
+                  icon={<UserMinus />}
+                  tasks={tasks.filter((t) => t.status === "waiting")}
+                  {...commonProps}
+                />
+              );
+            case SECTIONS.SOMEDAY:
+              return (
+                <ListView
+                  title="Как-нибудь"
+                  icon={<Clock />}
+                  tasks={tasks.filter((t) => t.status === "someday")}
+                  {...commonProps}
+                />
+              );
+            case SECTIONS.REFERENCE:
+              return (
+                <ListView
+                  title="Хранилище"
+                  icon={<Archive />}
+                  tasks={tasks.filter((t) => t.status === "reference")}
+                  {...commonProps}
+                />
+              );
+            case SECTIONS.DONE:
+              return (
+                <DoneView
+                  tasks={tasks.filter((t) => t.status === "done")}
+                  onDelete={deleteTask}
+                  onRepeat={(id) => updateTask(id, { status: "inbox" })}
+                  getProjectName={getProjectName}
+                  categories={categories}
+                />
+              );
+            case SECTIONS.REVIEW:
+              return <ReviewView />;
+            case SECTIONS.SETTINGS:
+              return (
+                <SettingsView
+                  categories={categories}
+                  onAdd={addCategory}
+                  onUpdate={updateCategoryName}
+                  onDelete={deleteCategory}
+                />
+              );
+            default:
+              return null;
+          }
+        };
+
+        return (
+          <div className="flex h-screen bg-gray-50 text-slate-800 font-sans overflow-hidden">
+            <div
+              className={`${
+                isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+              } fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-xl transition-transform duration-300 ease-in-out md:relative md:translate-x-0 flex flex-col h-full`}
+            >
+              <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h1 className="text-xl font-bold text-indigo-600 flex items-center gap-2">
+                  <CheckCircle className="fill-indigo-600 text-white" /> System
+                  4x7
+                </h1>
+                <button
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="md:hidden text-gray-400"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <nav className="flex-1 overflow-y-auto py-4">
+                <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Сбор & Сортировка
                 </div>
-            );
-        };
-
-        const TaskItem = ({ task, onDelete, onComplete, activeTimer, onStart, onPause, onStop, getDuration, getProjectName, categories, showTimer = true }) => {
-            const isActive = activeTimer.taskId === task.id;
-            const projectName = task.projectId ? getProjectName(task.projectId) : null;
-            const category = categories ? categories.find(c => c.name === task.category) : null;
-            const categoryColor = category ? category.color : '#9ca3af'; // Default gray if not found
-            
-            return (
-                <li className={`p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 flex items-center gap-4 group transition-all ${isActive ? 'bg-indigo-50/30' : ''}`}>
-                    {onComplete && (
-                        <button onClick={() => onComplete(task.id)} className="w-6 h-6 border-2 border-gray-300 rounded-full hover:border-green-500 hover:bg-green-50 flex items-center justify-center text-green-500 transition-all"><Check size={14} className="opacity-0 hover:opacity-100" /></button>
-                    )}
-                    
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`font-medium ${isActive ? 'text-indigo-700 font-bold' : 'text-gray-700'}`}>{task.title}</span>
-                            <span className="text-xs px-2 py-1 rounded text-white" style={{backgroundColor: categoryColor}}>{task.category}</span>
-                            {projectName && (
-                                <span className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded flex items-center gap-1">
-                                    <Folder size={10} /> {projectName}
-                                </span>
-                            )}
-                        </div>
-                        {task.project && <div className="text-xs text-gray-400 mt-1">Проект: {task.project.outcome}</div>}
-                    </div>
-
-                    {showTimer && <TimerControl taskId={task.id} isActive={isActive} isRunning={activeTimer.isRunning} accumulated={task.totalTime || 0} onStart={onStart} onPause={onPause} onStop={onStop} getDuration={getDuration} />}
-                    {onDelete && <button onClick={() => onDelete(task.id)} className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={18} /></button>}
-                </li>
-            );
-        };
-
-        // --- VIEWS ---
-
-        const SettingsView = ({ categories, onAdd, onUpdate, onDelete }) => {
-            const [newCatName, setNewCatName] = useState('');
-            const [editingId, setEditingId] = useState(null);
-            const [editName, setEditName] = useState('');
-
-            const isValidName = (name) => /^[a-zA-Zа-яА-Я0-9 ]+$/.test(name) && name.length <= 18 && name.trim().length > 0;
-
-            const handleAdd = () => {
-                if (!isValidName(newCatName)) return alert('Имя: 1-18 символов, буквы/цифры/пробел.');
-                if (categories.some(c => c.name === newCatName)) return alert('Такая категория уже есть.');
-                onAdd(newCatName);
-                setNewCatName('');
-            };
-
-            const startEdit = (cat) => {
-                setEditingId(cat.id);
-                setEditName(cat.name);
-            };
-
-            const saveEdit = (id) => {
-                if (!isValidName(editName)) return alert('Некорректное имя.');
-                onUpdate(id, editName);
-                setEditingId(null);
-            };
-
-            const customCount = categories.filter(c => c.type === 'custom').length;
-
-            return (
-                <div className="space-y-6">
-                    <header className="flex items-center gap-3 mb-6">
-                        <div className="p-3 rounded-lg bg-indigo-100 text-indigo-600"><Settings /></div>
-                        <div>
-                            <h2 className="text-2xl font-bold text-gray-800">Настройки категорий</h2>
-                            <p className="text-sm text-gray-500">Управление системными и пользовательскими метками</p>
-                        </div>
-                    </header>
-
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-gray-700">Ваши категории</h3>
-                            <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500">Пользовательских: {customCount}/3</span>
-                        </div>
-
-                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                            {categories.map(cat => (
-                                <div key={cat.id} className="flex items-center justify-between p-3 border rounded-lg hover:shadow-sm transition-shadow bg-gray-50">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-4 h-4 rounded-full" style={{backgroundColor: cat.color}}></div>
-                                        {editingId === cat.id ? (
-                                            <input 
-                                                autoFocus
-                                                className="border rounded px-1 py-0.5 text-sm w-28"
-                                                value={editName}
-                                                onChange={e => setEditName(e.target.value)}
-                                                onBlur={() => saveEdit(cat.id)}
-                                                onKeyDown={e => e.key === 'Enter' && saveEdit(cat.id)}
-                                            />
-                                        ) : (
-                                            <span className="font-medium text-sm text-gray-700">{cat.name}</span>
-                                        )}
-                                    </div>
-                                    <div className="flex gap-1">
-                                        <button onClick={() => startEdit(cat)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded"><Edit2 size={14} /></button>
-                                        {cat.type === 'custom' && (
-                                            <button onClick={() => onDelete(cat.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 size={14} /></button>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {customCount < 3 && (
-                            <div className="mt-6 pt-6 border-t border-gray-100">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Добавить новую категорию</label>
-                                <div className="flex gap-2">
-                                    <input 
-                                        className="flex-1 border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                                        placeholder="Название (макс. 18 символов)"
-                                        value={newCatName}
-                                        onChange={e => setNewCatName(e.target.value)}
-                                        maxLength={18}
-                                    />
-                                    <button 
-                                        onClick={handleAdd}
-                                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium flex items-center gap-2"
-                                    >
-                                        <Plus size={16} /> Добавить
-                                    </button>
-                                </div>
-                                <p className="text-xs text-gray-400 mt-2 flex items-center gap-1"><AlertCircle size={12}/> Только буквы, цифры и пробелы</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-        };
-
-        const InboxView = ({ tasks, onAddTask, onStartProcess, getProjectName, categories }) => {
-            const [newItem, setNewItem] = useState("");
-            const [category, setCategory] = useState("");
-
-            // Set default category when categories load or change
-            useEffect(() => {
-                if (categories.length > 0 && !category) {
-                    setCategory(categories[0].name);
-                }
-            }, [categories]);
-
-            const handleSubmit = (e) => {
-                e.preventDefault();
-                if (!newItem.trim()) return;
-                onAddTask({ title: newItem, category: category || categories[0].name });
-                setNewItem("");
-            };
-
-            return (
-                <div className="space-y-6">
-                    <header className="flex justify-between items-end">
-                        <div><h2 className="text-2xl font-bold text-gray-800">Входящие</h2><p className="text-gray-500">Сбор задач.</p></div>
-                        {tasks.length > 0 && <button onClick={onStartProcess} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"><RefreshCw size={18} />Сортировка ({tasks.length})</button>}
-                    </header>
-                    <form onSubmit={handleSubmit} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row gap-4">
-                        <input type="text" value={newItem} onChange={(e) => setNewItem(e.target.value)} placeholder="Что нужно сделать?" className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" autoFocus />
-                        <select value={category} onChange={(e) => setCategory(e.target.value)} className="px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 outline-none cursor-pointer">
-                            {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                        </select>
-                        <button type="submit" className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800"><Plus size={20} /></button>
-                    </form>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        {tasks.length === 0 ? <div className="p-8 text-center text-gray-400">Входящие пусты</div> : <ul>{tasks.map(task => (
-                            <li key={task.id} className="border-b last:border-0 p-4 flex justify-between hover:bg-gray-50">
-                                <div>
-                                    <span className="font-medium block">{task.title}</span>
-                                    {task.projectId && (
-                                        <span className="text-xs text-blue-500 flex items-center gap-1 mt-1">
-                                            <Folder size={10} /> {getProjectName(task.projectId)}
-                                        </span>
-                                    )}
-                                </div>
-                                <span className="text-xs px-2 py-1 rounded h-fit text-white" style={{backgroundColor: categories.find(c => c.name === task.category)?.color || '#ccc'}}>
-                                    {task.category}
-                                </span>
-                            </li>
-                        ))}</ul>}
-                    </div>
-                </div>
-            );
-        };
-
-        const TodayView = ({ tasks, onComplete, onDelete, activeTimer, onStart, onPause, onStop, getDuration, getProjectName, categories }) => {
-            if (activeTimer.taskId) {
-                const activeTask = tasks.find(t => t.id === activeTimer.taskId);
-                if (activeTask && activeTask.status === 'today') {
-                     const catColor = categories.find(c => c.name === activeTask.category)?.color || '#ccc';
-                     return (
-                        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-8 animate-in fade-in duration-500">
-                            <div className="bg-indigo-100 p-6 rounded-full text-indigo-600 shadow-inner"><Activity size={64} className="animate-pulse" /></div>
-                            <div>
-                                <div className="text-sm text-gray-500 uppercase tracking-widest mb-2">Фокус режим</div>
-                                <h2 className="text-4xl font-bold text-gray-800 max-w-2xl leading-tight">{activeTask.title}</h2>
-                                {activeTask.projectId && <div className="mt-2 text-blue-500 font-medium flex items-center justify-center gap-1"><Folder size={16}/> {getProjectName(activeTask.projectId)}</div>}
-                                <div className="mt-2 inline-block px-3 py-1 rounded text-white" style={{backgroundColor: catColor}}>{activeTask.category}</div>
-                            </div>
-                            <div className="text-7xl font-mono font-bold text-indigo-600 tabular-nums">{formatTime(getDuration(activeTask.id))}</div>
-                            <div className="flex gap-4">
-                                {activeTimer.isRunning ? <button onClick={onPause} className="flex items-center gap-2 px-8 py-4 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl text-xl font-bold shadow-lg transition-all transform hover:scale-105"><Pause /> Пауза</button> : <button onClick={() => onStart(activeTask.id)} className="flex items-center gap-2 px-8 py-4 bg-green-500 hover:bg-green-600 text-white rounded-xl text-xl font-bold shadow-lg transition-all transform hover:scale-105"><Play /> Продолжить</button>}
-                                <button onClick={onStop} className="flex items-center gap-2 px-8 py-4 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xl font-bold shadow-lg transition-all transform hover:scale-105"><Square /> Стоп</button>
-                            </div>
-                            <div className="mt-8 text-gray-400 text-sm">Остальные задачи скрыты для концентрации</div>
-                        </div>
-                     );
-                }
-            }
-
-            return (
-                <div className="space-y-6">
-                    <header className="flex items-center gap-3">
-                        <div className="p-3 rounded-lg bg-indigo-100 text-indigo-600"><CheckSquare /></div>
-                        <div><h2 className="text-2xl font-bold text-gray-800">Сегодня</h2><p className="text-gray-500">Приоритетные задачи.</p></div>
-                    </header>
-                    <div className="bg-white rounded-xl shadow-md border border-indigo-100 overflow-hidden">
-                        {tasks.length === 0 ? <div className="p-12 text-center flex flex-col items-center"><div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-4"><CheckCircle size={32} /></div><h3 className="text-lg font-medium text-gray-900">Всё сделано!</h3></div> : 
-                        <ul className="divide-y divide-gray-100">{tasks.map(task => <TaskItem key={task.id} task={task} onComplete={onComplete} onDelete={onDelete} activeTimer={activeTimer} onStart={onStart} onPause={onPause} onStop={onStop} getDuration={getDuration} getProjectName={getProjectName} categories={categories} />)}</ul>}
-                    </div>
-                </div>
-            );
-        };
-
-        const ProcessWizard = ({ tasks, onUpdateTask, onComplete, categories }) => {
-            const inboxTasks = tasks.filter(t => t.status === 'inbox');
-            const [step, setStep] = useState(1);
-            const [data, setData] = useState({}); 
-            
-            if (inboxTasks.length === 0) return <div className="text-center py-20"><CheckCircle size={48} className="mx-auto text-green-500 mb-4"/><h2 className="text-2xl font-bold">Все чисто!</h2><button onClick={onComplete} className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded">Готово</button></div>;
-
-            const task = inboxTasks[0];
-            const catColor = categories.find(c => c.name === task.category)?.color || '#ccc';
-            const next = (status, updates={}) => { onUpdateTask(task.id, { status, ...updates }); setStep(1); setData({}); };
-
-            return (
-                <div className="max-w-xl mx-auto mt-10">
-                    <div className="text-center mb-8"><div className="inline-block px-3 py-1 rounded text-xs mb-2 text-white" style={{backgroundColor: catColor}}>{task.category}</div><h2 className="text-2xl font-bold">{task.title}</h2></div>
-                    <div className="bg-gray-100 p-8 rounded-xl">
-                        {step === 1 && (
-                            <div><h3 className="text-xl text-center font-bold mb-6">Нужно ли с этим что-то делать?</h3>
-                            <div className="grid grid-cols-2 gap-4"><button onClick={() => setStep(2)} className="p-4 bg-white rounded border-2 border-transparent hover:border-indigo-500 text-indigo-600 font-bold">Да</button><div className="space-y-2"><button onClick={() => next('reference')} className="w-full p-3 bg-white rounded text-sm">Нет, Информация</button><button onClick={() => onUpdateTask(task.id, {status:'deleted'})} className="w-full p-3 bg-white rounded text-sm text-red-500">Мусор</button></div></div></div>
-                        )}
-                         {step === 2 && (
-                            <div><h3 className="text-xl text-center font-bold mb-6">Это одно действие?</h3>
-                            <div className="grid grid-cols-2 gap-4"><button onClick={() => setStep(3)} className="p-4 bg-white rounded border-2 border-transparent hover:border-indigo-500 text-indigo-600 font-bold">Да</button>
-                            <div className="bg-white p-4 rounded space-y-2"><input placeholder="Цель проекта" className="w-full p-2 border rounded" onChange={e => setData({...data, outcome: e.target.value})} /><input placeholder="Первый шаг" className="w-full p-2 border rounded" onChange={e => setData({...data, firstStep: e.target.value})} /><button disabled={!data.outcome} onClick={() => next('projects', {project: data})} className="w-full bg-blue-600 text-white py-2 rounded">Создать проект</button></div></div></div>
-                        )}
-                        {step === 3 && (
-                            <div><h3 className="text-xl text-center font-bold mb-6">Займет меньше 2 минут?</h3>
-                            <div className="grid grid-cols-2 gap-4"><button onClick={() => next('today')} className="p-4 bg-white rounded border-2 border-green-500 text-green-600 font-bold">Да (Сделать сейчас)</button><button onClick={() => setStep(4)} className="p-4 bg-white rounded">Нет, дольше</button></div></div>
-                        )}
-                        {step === 4 && (
-                             <div><h3 className="text-xl text-center font-bold mb-6">Когда сделать?</h3>
-                            <div className="grid grid-cols-2 gap-4"><button onClick={() => next('today')} className="p-4 bg-white rounded border-2 border-indigo-500 text-indigo-600 font-bold">Как можно скорее (Сегодня)</button><button onClick={() => next('someday')} className="p-4 bg-white rounded">Когда-нибудь</button><div className="col-span-2 bg-white p-4 rounded"><input type="datetime-local" className="w-full border p-2 rounded mb-2" onChange={e => setData({...data, date: e.target.value})} /><button disabled={!data.date} onClick={() => next('calendar', {dueDate: data.date})} className="w-full bg-purple-600 text-white py-2 rounded">В календарь</button></div></div></div>
-                        )}
-                    </div>
-                </div>
-            );
-        };
-
-        const ProductivityView = ({ tasks, getProjectName, categories }) => {
-            const stats = useMemo(() => {
-                let totalTime = 0;
-                let todayTime = 0;
-                const catData = {};
-                const taskData = [];
-                const history = [];
-                const startOfDay = new Date();
-                startOfDay.setHours(0,0,0,0);
-
-                tasks.forEach(task => {
-                    if (task.sessions) {
-                        task.sessions.forEach(session => {
-                            totalTime += session.duration;
-                            if (session.start >= startOfDay.getTime()) todayTime += session.duration;
-                            catData[task.category] = (catData[task.category] || 0) + session.duration;
-                            history.push({ task: task.title, category: task.category, date: session.end, duration: session.duration });
-                        });
+                <NavItem
+                  active={activeSection === SECTIONS.INBOX}
+                  onClick={() => setActiveSection(SECTIONS.INBOX)}
+                  icon={<Inbox size={18} />}
+                  label="Входящие"
+                  count={tasks.filter((t) => t.status === "inbox").length}
+                  alert={tasks.filter((t) => t.status === "inbox").length > 0}
+                />
+                <button
+                  onClick={() => setActiveSection(SECTIONS.PROCESS)}
+                  className="w-full text-left px-6 py-3 flex items-center gap-3 text-indigo-600 hover:bg-indigo-50 font-medium transition-colors"
+                >
+                  <RefreshCw
+                    size={18}
+                    className={
+                      activeSection === SECTIONS.PROCESS ? "animate-spin" : ""
                     }
-                    if (task.totalTime > 0) taskData.push({ name: task.title.substring(0, 15) + '...', time: Math.floor(task.totalTime / 1000 / 60) });
-                });
+                  />
+                  <span>Сортировка</span>
+                </button>
 
-                // Map category colors from state
-                const pieData = Object.keys(catData).map(key => {
-                    const cat = categories.find(c => c.name === key);
-                    return { name: key, value: catData[key], color: cat ? cat.color : '#9ca3af' };
-                });
-                
-                history.sort((a, b) => b.date - a.date);
-                return { totalTime, todayTime, pieData, taskData: taskData.sort((a,b)=>b.time - a.time).slice(0, 5), history };
-            }, [tasks, categories]);
-
-            const generateMonthlyReport = () => {
-                const now = new Date();
-                const currentMonth = now.getMonth();
-                const currentYear = now.getFullYear();
-                const monthName = now.toLocaleString('ru-RU', { month: 'long' });
-
-                // 1. Filter Data for Current Month
-                const sessionsThisMonth = [];
-                const tasksCompletedThisMonth = [];
-                let monthTotalTime = 0;
-                const catTime = {};
-                const projectTime = {};
-                const dailyActiveTime = {};
-
-                tasks.forEach(task => {
-                    // Process Sessions
-                    if (task.sessions) {
-                        task.sessions.forEach(s => {
-                            const sessionDate = new Date(s.end);
-                            if (sessionDate.getMonth() === currentMonth && sessionDate.getFullYear() === currentYear) {
-                                sessionsThisMonth.push({ ...s, taskTitle: task.title, category: task.category, projectId: task.projectId });
-                                monthTotalTime += s.duration;
-                                catTime[task.category] = (catTime[task.category] || 0) + s.duration;
-                                
-                                if (task.projectId) {
-                                    projectTime[task.projectId] = (projectTime[task.projectId] || 0) + s.duration;
-                                }
-
-                                const dayKey = sessionDate.getDate();
-                                dailyActiveTime[dayKey] = (dailyActiveTime[dayKey] || 0) + s.duration;
-                            }
-                        });
-                    }
-
-                    if (task.status === 'done') {
-                        const workedOnThisMonth = task.sessions?.some(s => {
-                            const d = new Date(s.end);
-                            return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-                        });
-                        if (workedOnThisMonth || task.sessions?.length === 0) { // Include zero-time tasks if done
-                             tasksCompletedThisMonth.push(task);
-                        }
-                    }
-                });
-
-                // 2. Calculate Stats
-                const sortedCategories = Object.entries(catTime).sort((a,b) => b[1] - a[1]);
-                const totalCompleted = tasksCompletedThisMonth.length;
-                const avgTime = totalCompleted > 0 ? Math.floor(monthTotalTime / totalCompleted) : 0;
-
-                // Days stats
-                const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-                let daysWithActivity = Object.keys(dailyActiveTime).length;
-                let emptyDays = daysInMonth - daysWithActivity;
-                let daysMoreThan2Hours = Object.values(dailyActiveTime).filter(t => t > 2 * 60 * 60 * 1000).length;
-                
-                const sortedDays = Object.entries(dailyActiveTime).sort((a,b) => b[1] - a[1]);
-                const maxDay = sortedDays.length > 0 ? sortedDays[0][0] : '-';
-                const minDay = sortedDays.length > 0 ? sortedDays[sortedDays.length - 1][0] : '-';
-
-                const longestTask = [...tasks].sort((a,b) => (b.totalTime || 0) - (a.totalTime || 0))[0];
-                const shortestTask = [...tasks].filter(t=>t.totalTime > 0).sort((a,b) => (a.totalTime || 0) - (b.totalTime || 0))[0];
-
-                // 3. Build Report Text
-                let report = `Месяц: ${monthName.toUpperCase()} ${currentYear}\n`;
-                report += `Всего выполненных задач: ${totalCompleted}\n`;
-                report += `Общее рабочее время: ${formatTimeText(monthTotalTime)}\n`;
-                report += `Среднее время на задачу: ${formatTimeText(avgTime)}\n\n`;
-
-                report += `=== Метрика продуктивности по категориям ===\n`;
-                sortedCategories.forEach(([cat, time]) => {
-                    const percent = monthTotalTime > 0 ? ((time / monthTotalTime) * 100).toFixed(1) : 0;
-                    report += `${cat}: ${formatTimeText(time)} (${percent}%)\n`;
-                });
-                report += `\n`;
-
-                report += `=== Вклад по проектам ===\n`;
-                Object.entries(projectTime).forEach(([pid, time]) => {
-                    const pName = getProjectName(Number(pid)) || 'Удаленный проект';
-                    report += `Проект: ${pName}\n`;
-                    report += ` • Активность — ${formatTimeText(time)}\n`;
-                });
-                if (Object.keys(projectTime).length === 0) report += "Нет активности по проектам.\n";
-                report += `\n`;
-
-                report += `=== Список всех выполненных задач ===\n`;
-                tasksCompletedThisMonth.forEach(t => {
-                    const lastSessionDate = t.sessions && t.sessions.length > 0 
-                        ? new Date(t.sessions[t.sessions.length - 1].end).toLocaleDateString() 
-                        : 'Нет даты';
-                    const pName = t.projectId ? getProjectName(t.projectId) : 'Без проекта';
-                    report += `${lastSessionDate} — ${t.title} — ${formatTimeText(t.totalTime)} — ${t.category} — ${pName}\n`;
-                });
-                report += `\n`;
-
-                report += `=== Саммари месяца ===\n`;
-                report += `Главная категория месяца: ${sortedCategories.length > 0 ? sortedCategories[0][0] : '-'}\n`;
-                report += `Самая длинная задача: ${longestTask ? longestTask.title : '-'}\n`;
-                report += `Самая короткая задача: ${shortestTask ? shortestTask.title : '-'}\n`;
-                report += `День максимальной продуктивности: ${maxDay} число\n`;
-                report += `День минимальной продуктивности: ${minDay} число\n`;
-                report += `Количество дней с >2 часов активности: ${daysMoreThan2Hours}\n`;
-                report += `Количество пустых дней: ${emptyDays}\n\n`;
-
-                report += `=== Итоги и выводы месяца ===\n`;
-                report += `(Место для выводов GPT)\n`;
-
-                // 4. Download
-                const blob = new Blob([report], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `metrica_${monthName}_${currentYear}.txt`;
-                a.click();
-                URL.revokeObjectURL(url);
-            };
-
-            if (!window.Recharts) return <div className="space-y-6 text-red-600">Ошибка загрузки графиков.</div>;
-
-            return (
-                <div className="space-y-6">
-                    <header className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 rounded-lg bg-indigo-100 text-indigo-600"><BarChart2 /></div>
-                            <h2 className="text-2xl font-bold text-gray-800">Продуктивность</h2>
-                        </div>
-                        <button 
-                            onClick={generateMonthlyReport}
-                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm font-medium text-sm"
-                        >
-                            <FileText size={16} />
-                            Загрузить метрику месяца
-                        </button>
-                    </header>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-indigo-100"><div className="text-gray-500 text-xs uppercase">Время за сегодня</div><div className="text-2xl font-bold text-indigo-600">{formatTime(stats.todayTime)}</div></div>
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200"><div className="text-gray-500 text-xs uppercase">Всего времени</div><div className="text-2xl font-bold text-gray-800">{formatTime(stats.totalTime)}</div></div>
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200"><div className="text-gray-500 text-xs uppercase">Задач в работе</div><div className="text-2xl font-bold text-gray-800">{tasks.filter(t => t.status !== 'done' && t.status !== 'inbox').length}</div></div>
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200"><div className="text-gray-500 text-xs uppercase">Завершено задач</div><div className="text-2xl font-bold text-green-600">{tasks.filter(t => t.status === 'done').length}</div></div>
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-6 h-80">
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col"><h3 className="font-bold text-gray-700 mb-4">Время по категориям</h3><div className="flex-1"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={stats.pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">{stats.pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}</Pie><Tooltip formatter={(val) => formatTime(val)} /><Legend /></PieChart></ResponsiveContainer></div></div>
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col"><h3 className="font-bold text-gray-700 mb-4">Топ задач (мин)</h3><div className="flex-1"><ResponsiveContainer width="100%" height="100%"><BarChart data={stats.taskData} layout="vertical"><XAxis type="number" hide /><YAxis dataKey="name" type="category" width={100} style={{fontSize: '12px'}} /><Tooltip /><Bar dataKey="time" fill="#6366f1" radius={[0, 4, 4, 0]} /></BarChart></ResponsiveContainer></div></div>
-                    </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="p-4 border-b border-gray-100 font-bold text-gray-700">История активности</div>
-                        <div className="max-h-80 overflow-y-auto">
-                            <table className="w-full text-left text-sm"><thead className="bg-gray-50 text-gray-500 sticky top-0"><tr><th className="p-3 font-medium">Дата</th><th className="p-3 font-medium">Задача</th><th className="p-3 font-medium">Категория</th><th className="p-3 font-medium text-right">Время</th></tr></thead><tbody className="divide-y divide-gray-100">{stats.history.map((log, idx) => <tr key={idx} className="hover:bg-gray-50"><td className="p-3 text-gray-500">{new Date(log.date).toLocaleString('ru-RU', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'})}</td><td className="p-3 font-medium text-gray-700">{log.task}</td><td className="p-3"><span className="px-2 py-1 rounded text-xs text-white" style={{backgroundColor: categories.find(c => c.name === log.category)?.color || '#ccc'}}>{log.category}</span></td><td className="p-3 text-right font-mono text-indigo-600">{formatTime(log.duration)}</td></tr>)}{stats.history.length === 0 && <tr><td colSpan="4" className="p-8 text-center text-gray-400">История пуста</td></tr>}</tbody></table>
-                        </div>
-                    </div>
+                <div className="mt-6 px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Действия
                 </div>
-            );
-        };
+                <NavItem
+                  active={activeSection === SECTIONS.TODAY}
+                  onClick={() => setActiveSection(SECTIONS.TODAY)}
+                  icon={<CheckSquare size={18} />}
+                  label="Сегодня"
+                  count={tasks.filter((t) => t.status === "today").length}
+                />
+                <NavItem
+                  active={activeSection === SECTIONS.PROJECTS}
+                  onClick={() => setActiveSection(SECTIONS.PROJECTS)}
+                  icon={<Layers size={18} />}
+                  label="Проекты"
+                />
+                <NavItem
+                  active={activeSection === SECTIONS.CALENDAR}
+                  onClick={() => setActiveSection(SECTIONS.CALENDAR)}
+                  icon={<CalendarIcon size={18} />}
+                  label="Календарь"
+                />
 
-        const ListView = ({ title, icon, tasks, color, showDelegateInfo, onDelete, onComplete, activeTimer, onStart, onPause, onStop, getDuration, getProjectName, categories }) => (
-            <div className="space-y-6">
-                <header className="flex items-center gap-3"><div className={`p-3 rounded-lg ${color || 'bg-gray-100'}`}>{icon}</div><h2 className="text-2xl font-bold text-gray-800">{title}</h2><span className="ml-auto text-gray-400 text-sm">{tasks.length} items</span></header>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    {tasks.length === 0 ? <div className="p-8 text-center text-gray-400">Список пуст</div> : 
-                    <ul>{tasks.map(task => <TaskItem key={task.id} task={task} onComplete={onComplete} onDelete={onDelete} activeTimer={activeTimer} onStart={onStart} onPause={onPause} onStop={onStop} getDuration={getDuration} getProjectName={getProjectName} categories={categories} />)}</ul>}
+                <div className="mt-6 px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Анализ
                 </div>
+                <NavItem
+                  active={activeSection === SECTIONS.PRODUCTIVITY}
+                  onClick={() => setActiveSection(SECTIONS.PRODUCTIVITY)}
+                  icon={<BarChart2 size={18} />}
+                  label="Продуктивность"
+                />
+                <NavItem
+                  active={activeSection === SECTIONS.REVIEW}
+                  onClick={() => setActiveSection(SECTIONS.REVIEW)}
+                  icon={<Play size={18} />}
+                  label="Ревизия"
+                />
+
+                <div className="mt-6 px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Архивы
+                </div>
+                <NavItem
+                  active={activeSection === SECTIONS.WAITING}
+                  onClick={() => setActiveSection(SECTIONS.WAITING)}
+                  icon={<UserMinus size={18} />}
+                  label="Лист поручений"
+                />
+                <NavItem
+                  active={activeSection === SECTIONS.SOMEDAY}
+                  onClick={() => setActiveSection(SECTIONS.SOMEDAY)}
+                  icon={<Clock size={18} />}
+                  label="Как-нибудь"
+                />
+                <NavItem
+                  active={activeSection === SECTIONS.REFERENCE}
+                  onClick={() => setActiveSection(SECTIONS.REFERENCE)}
+                  icon={<Archive size={18} />}
+                  label="Хранилище"
+                />
+                <NavItem
+                  active={activeSection === SECTIONS.DONE}
+                  onClick={() => setActiveSection(SECTIONS.DONE)}
+                  icon={<CheckCircle size={18} />}
+                  label="Выполнено"
+                />
+
+                <div className="mt-6 px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Система
+                </div>
+                <NavItem
+                  active={activeSection === SECTIONS.SETTINGS}
+                  onClick={() => setActiveSection(SECTIONS.SETTINGS)}
+                  icon={<Settings size={18} />}
+                  label="Настройки"
+                />
+              </nav>
+              <div className="p-4 border-t bg-gray-50 flex gap-2">
+                <button
+                  onClick={handleExport}
+                  className="flex-1 py-2 bg-white border rounded hover:bg-indigo-50 text-xs flex justify-center gap-1"
+                >
+                  <Download size={14} />
+                  Скачать
+                </button>
+                <button
+                  onClick={() => fileInputRef.current.click()}
+                  className="flex-1 py-2 bg-white border rounded hover:bg-green-50 text-xs flex justify-center gap-1"
+                >
+                  <Upload size={14} />
+                  Загрузить
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept=".json"
+                  className="hidden"
+                />
+              </div>
             </div>
-        );
 
-        const ProjectsView = ({ allTasks, projects, onAddTask, onDelete, onComplete, activeTimer, onStart, onPause, onStop, getDuration, categories }) => {
-            const [newTaskTitles, setNewTaskTitles] = useState({});
+            <main className="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-8 relative">
+              {!isSidebarOpen && (
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="absolute top-4 left-4 z-30 p-2 bg-white rounded shadow md:hidden"
+                >
+                  <Menu size={20} />
+                </button>
+              )}
 
-            const handleAddTask = (projectId, projectCategory) => {
-                const title = newTaskTitles[projectId];
-                if (!title || !title.trim()) return;
-                onAddTask({ title, category: projectCategory, projectId: projectId, status: 'inbox' });
-                setNewTaskTitles(prev => ({ ...prev, [projectId]: '' }));
-                alert('Задача добавлена во "Входящие"');
-            };
-
-            return (
-                <div className="space-y-6">
-                    <header className="flex items-center gap-3"><div className="p-3 rounded-lg bg-blue-100 text-blue-600"><Layers /></div><h2 className="text-2xl font-bold text-gray-800">Проекты</h2></header>
-                    <div className="grid gap-6 md:grid-cols-2">
-                        {projects.length === 0 ? <div className="col-span-full text-center text-gray-400 py-10">Нет проектов</div> : projects.map(project => {
-                            const linkedTasks = allTasks.filter(t => t.projectId === project.id && t.status !== 'done');
-                            return (
-                                <div key={project.id} className={`bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col h-full relative ${activeTimer.taskId === project.id ? 'ring-2 ring-indigo-500' : ''}`}>
-                                     <div className="absolute top-4 right-4 flex gap-2">
-                                        <button onClick={() => onComplete(project.id)} className="text-gray-300 hover:text-green-500"><CheckCircle size={20} /></button>
-                                     </div>
-                                     <div className="mb-4 border-b border-gray-100 pb-4">
-                                        <div className="text-xs uppercase tracking-wide text-blue-600 font-bold mb-1">Проект</div>
-                                        <h3 className="text-xl font-bold text-gray-800 mb-2">{project.title}</h3>
-                                        <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded mb-2"><strong>Цель:</strong> {project.project?.outcome}</div>
-                                        {linkedTasks.length > 0 && (
-                                            <div className="mt-3">
-                                                <div className="text-xs font-bold text-gray-400 uppercase mb-1">Активные задачи ({linkedTasks.length})</div>
-                                                <ul className="space-y-1 max-h-32 overflow-y-auto">{linkedTasks.map(lt => (<li key={lt.id} className="text-xs flex items-center justify-between text-gray-600 bg-gray-50 p-1 rounded"><span>{lt.title}</span><span className={`px-1.5 py-0.5 rounded text-[10px] ${getStatusColor(lt.status)}`}>{getStatusLabel(lt.status)}</span></li>))}</ul>
-                                            </div>
-                                        )}
-                                     </div>
-                                     <div className="mb-4">
-                                        <div className="flex gap-2"><input type="text" placeholder="Новая задача в проект..." className="flex-1 text-sm border rounded px-2 py-1" value={newTaskTitles[project.id] || ''} onChange={(e) => setNewTaskTitles({...newTaskTitles, [project.id]: e.target.value})} onKeyDown={(e) => e.key === 'Enter' && handleAddTask(project.id, project.category)} /><button onClick={() => handleAddTask(project.id, project.category)} className="bg-indigo-600 text-white p-1.5 rounded hover:bg-indigo-700" title="Добавить во Входящие"><Plus size={16} /></button></div>
-                                        <div className="text-[10px] text-gray-400 mt-1 text-right">Попадает во "Входящие"</div>
-                                     </div>
-                                     <div className="mt-auto pt-2 flex justify-between items-end">
-                                        <div><div className="text-xs font-semibold text-gray-400 uppercase mb-2">Следующий шаг (Base)</div><div className="flex items-center gap-2 text-gray-800"><div className="w-2 h-2 rounded-full bg-green-500"></div>{project.project?.firstStep}</div></div>
-                                        <div className="flex flex-col items-end gap-2"><TimerControl taskId={project.id} isActive={activeTimer.taskId === project.id} isRunning={activeTimer.isRunning} accumulated={project.totalTime || 0} onStart={onStart} onPause={onPause} onStop={onStop} getDuration={getDuration} /><button onClick={() => onDelete(project.id)} className="text-xs text-red-300 hover:text-red-500 mt-2">Архив</button></div>
-                                     </div>
-                                </div>
-                            );
-                        })}
+              {activeTimer.taskId && activeSection !== SECTIONS.TODAY && (
+                <div className="mb-6 bg-indigo-600 text-white p-4 rounded-xl shadow-lg flex justify-between items-center animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <Timer className="animate-spin-slow" />
+                    <div>
+                      <div className="text-xs opacity-80">Таймер запущен</div>
+                      <div className="font-bold">
+                        {tasks.find((t) => t.id === activeTimer.taskId)
+                          ?.title || "Задача"}
+                      </div>
                     </div>
-                 </div>
-            );
+                  </div>
+                  <div className="text-xl font-mono font-bold">
+                    {formatTime(getTaskDuration(activeTimer.taskId))}
+                  </div>
+                  <button
+                    onClick={() => setActiveSection(SECTIONS.TODAY)}
+                    className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-sm"
+                  >
+                    Перейти
+                  </button>
+                </div>
+              )}
+
+              <div className="max-w-5xl mx-auto">{renderContent()}</div>
+            </main>
+          </div>
+        );
+      }
+
+      // --- COMPONENTS ---
+
+      const NavItem = ({ active, onClick, icon, label, count, alert }) => (
+        <button
+          onClick={onClick}
+          className={`w-full flex items-center justify-between px-6 py-3 text-sm font-medium transition-colors ${
+            active
+              ? "bg-indigo-50 text-indigo-700 border-r-4 border-indigo-600"
+              : "text-gray-600 hover:bg-gray-50"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            {icon}
+            <span>{label}</span>
+          </div>
+          {count !== undefined && (
+            <span
+              className={`px-2 py-0.5 rounded-full text-xs ${
+                alert
+                  ? "bg-red-100 text-red-600 font-bold"
+                  : "bg-gray-100 text-gray-500"
+              }`}
+            >
+              {count}
+            </span>
+          )}
+        </button>
+      );
+
+      const TimerControl = ({
+        taskId,
+        isActive,
+        isRunning,
+        accumulated,
+        onStart,
+        onPause,
+        onStop,
+        getDuration,
+      }) => {
+        const duration = getDuration(taskId);
+        if (isActive) {
+          return (
+            <div className="flex items-center gap-2 bg-indigo-50 p-1 rounded-lg border border-indigo-100">
+              <div className="font-mono text-indigo-700 w-16 text-center font-bold text-sm">
+                {formatTime(duration)}
+              </div>
+              {isRunning ? (
+                <button
+                  onClick={onPause}
+                  className="p-1.5 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200"
+                  title="Пауза"
+                >
+                  <Pause size={14} />
+                </button>
+              ) : (
+                <button
+                  onClick={() => onStart(taskId)}
+                  className="p-1.5 bg-green-100 text-green-700 rounded hover:bg-green-200"
+                  title="Продолжить"
+                >
+                  <Play size={14} />
+                </button>
+              )}
+              <button
+                onClick={onStop}
+                className="p-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200"
+                title="Стоп и Сохранить"
+              >
+                <Square size={14} />
+              </button>
+            </div>
+          );
+        }
+        return (
+          <div className="flex items-center gap-2 text-gray-400 group-hover:text-gray-600">
+            {accumulated > 0 && (
+              <span className="text-xs font-mono">
+                {formatTime(accumulated)}
+              </span>
+            )}
+            <button
+              onClick={() => onStart(taskId)}
+              className="p-2 hover:bg-indigo-50 hover:text-indigo-600 rounded-full transition-colors"
+              title="Запустить таймер"
+            >
+              <Timer size={18} />
+            </button>
+          </div>
+        );
+      };
+
+      const TaskItem = ({
+        task,
+        onDelete,
+        onComplete,
+        activeTimer,
+        onStart,
+        onPause,
+        onStop,
+        getDuration,
+        getProjectName,
+        categories,
+        showTimer = true,
+      }) => {
+        const isActive = activeTimer.taskId === task.id;
+        const projectName = task.projectId
+          ? getProjectName(task.projectId)
+          : null;
+        const category = categories
+          ? categories.find((c) => c.name === task.category)
+          : null;
+        const categoryColor = category ? category.color : "#9ca3af";
+
+        return (
+          <li
+            className={`p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 flex items-center gap-4 group transition-all ${
+              isActive ? "bg-indigo-50/30" : ""
+            }`}
+          >
+            {onComplete && (
+              <button
+                onClick={() => onComplete(task.id)}
+                className="w-6 h-6 border-2 border-gray-300 rounded-full hover:border-green-500 hover:bg-green-50 flex items-center justify-center text-green-500 transition-all"
+              >
+                <Check
+                  size={14}
+                  className="opacity-0 group-hover:opacity-100"
+                />
+              </button>
+            )}
+
+            <div className="flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  className={`font-medium ${
+                    isActive ? "text-indigo-700 font-bold" : "text-gray-700"
+                  }`}
+                >
+                  {task.title}
+                </span>
+                <span
+                  className="text-xs px-2 py-1 rounded text-white"
+                  style={{ backgroundColor: categoryColor }}
+                >
+                  {task.category}
+                </span>
+                {projectName && (
+                  <span className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded flex items-center gap-1">
+                    <Folder size={10} /> {projectName}
+                  </span>
+                )}
+              </div>
+              {task.project && (
+                <div className="text-xs text-gray-400 mt-1">
+                  Проект: {task.project.outcome}
+                </div>
+              )}
+            </div>
+
+            {showTimer && (
+              <TimerControl
+                taskId={task.id}
+                isActive={isActive}
+                isRunning={activeTimer.isRunning}
+                accumulated={task.totalTime || 0}
+                onStart={onStart}
+                onPause={onPause}
+                onStop={onStop}
+                getDuration={getDuration}
+              />
+            )}
+            {onDelete && (
+              <button
+                onClick={() => onDelete(task.id)}
+                className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
+          </li>
+        );
+      };
+
+      // --- VIEWS ---
+
+      const SettingsView = ({ categories, onAdd, onUpdate, onDelete }) => {
+        const [newCatName, setNewCatName] = useState("");
+        const [editingId, setEditingId] = useState(null);
+        const [editName, setEditName] = useState("");
+
+        const isValidName = (name) =>
+          /^[a-zA-Zа-яА-Я0-9 ]+$/.test(name) &&
+          name.length <= 18 &&
+          name.trim().length > 0;
+
+        const handleAdd = () => {
+          if (!isValidName(newCatName))
+            return alert("Имя: 1-18 символов, буквы/цифры/пробел.");
+          if (categories.some((c) => c.name === newCatName))
+            return alert("Такая категория уже есть.");
+          onAdd(newCatName);
+          setNewCatName("");
         };
 
-        const DoneView = ({ tasks, onDelete, onRepeat, getProjectName, categories }) => (
-             <div className="space-y-6">
-                <header className="flex items-center gap-3"><div className="p-3 rounded-lg bg-green-100 text-green-600"><CheckCircle /></div><h2 className="text-2xl font-bold text-gray-800">Выполнено</h2></header>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    {tasks.length === 0 ? <div className="p-8 text-center text-gray-400">Пусто</div> : <ul>
-                        {tasks.map(task => (
-                            <li key={task.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
-                                <div className="flex items-center gap-3 opacity-60">
-                                    <Check size={16} className="text-green-600" />
-                                    <div>
-                                        <div className="flex items-center gap-2"><span className="font-medium line-through decoration-gray-400">{task.title}</span>{task.projectId && <span className="text-[10px] text-blue-500"><Folder size={10} className="inline"/> {getProjectName(task.projectId)}</span>}</div>
-                                        <span className="text-xs ml-2 bg-gray-100 px-2 py-0.5 rounded">{formatTime(task.totalTime || 0)}</span>
-                                    </div>
-                                </div>
-                                <div className="flex gap-2"><button onClick={() => onRepeat(task.id)} className="p-2 text-gray-400 hover:text-indigo-600"><RotateCcw size={18} /></button><button onClick={() => onDelete(task.id)} className="p-2 text-gray-400 hover:text-red-600"><Trash2 size={18} /></button></div>
-                            </li>
-                        ))}
-                    </ul>}
-                </div>
-             </div>
-        );
+        const startEdit = (cat) => {
+          setEditingId(cat.id);
+          setEditName(cat.name);
+        };
 
-        const ReviewView = () => {
-            const [showClearConfirm, setShowClearConfirm] = useState(false);
-            const [isCleaning, setIsCleaning] = useState(false);
+        const saveEdit = (id) => {
+          if (!isValidName(editName)) return alert("Некорректное имя.");
+          onUpdate(id, editName);
+          setEditingId(null);
+        };
 
-            const handleClearCache = async () => {
-                setIsCleaning(true);
-                try { localStorage.removeItem('system4x7_tasks_v2'); localStorage.removeItem('system4x7_categories'); localStorage.removeItem('system4x7_timer'); localStorage.clear(); sessionStorage.clear(); } catch (e) { console.error("Storage clear failed", e); }
-                try { if ('caches' in window) { const keys = await caches.keys(); await Promise.all(keys.map(key => caches.delete(key))); } } catch (e) { console.error("Cache clear failed", e); }
-                try { if ('indexedDB' in window && window.indexedDB.databases) { const dbs = await window.indexedDB.databases(); for (const db of dbs) { window.indexedDB.deleteDatabase(db.name); } } } catch (e) { console.error("IDB clear failed", e); }
-                try { if ('serviceWorker' in navigator) { const registrations = await navigator.serviceWorker.getRegistrations(); for (const registration of registrations) { await registration.unregister(); } } } catch (e) { console.error("SW clear failed", e); }
-                setTimeout(() => window.location.reload(), 100);
-            };
+        const customCount = categories.filter(
+          (c) => c.type === "custom"
+        ).length;
 
-            return (
-                <div className="space-y-6">
-                    <header className="flex items-center gap-3"><div className="p-3 rounded-lg bg-teal-100 text-teal-600"><Play /></div><h2 className="text-2xl font-bold text-gray-800">Ревизия</h2></header>
-                    <div className="grid gap-6 md:grid-cols-2">
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200"><h3 className="font-bold mb-4">Вечерняя рутина</h3><ul className="space-y-2">{["Закрыть все вкладки таймеров", "Очистить физический стол", "Выбрать 3 задачи на завтра"].map(i => <li key={i} className="flex gap-2"><input type="checkbox" /><span>{i}</span></li>)}</ul></div>
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200"><h3 className="font-bold mb-4">Еженедельная рутина</h3><ul className="space-y-2">{["Очистить папку Входящие", "Проверить список Как-нибудь", "Проверить Лист поручений", "Обновить Проекты"].map(i => <li key={i} className="flex gap-2"><input type="checkbox" /><span>{i}</span></li>)}</ul></div>
+        return (
+          <div className="space-y-6">
+            <header className="flex items-center gap-3 mb-6">
+              <div className="p-3 rounded-lg bg-indigo-100 text-indigo-600">
+                <Settings />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Настройки категорий
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Управление системными и пользовательскими метками
+                </p>
+              </div>
+            </header>
+
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-gray-700">Ваши категории</h3>
+                <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500">
+                  Пользовательских: {customCount}/3
+                </span>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {categories.map((cat) => (
+                  <div
+                    key={cat.id}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:shadow-sm transition-shadow bg-gray-50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-4 h-4 rounded-full"
+                        style={{ backgroundColor: cat.color }}
+                      ></div>
+                      {editingId === cat.id ? (
+                        <input
+                          autoFocus
+                          className="border rounded px-1 py-0.5 text-sm w-28"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          onBlur={() => saveEdit(cat.id)}
+                          onKeyDown={(e) =>
+                            e.key === "Enter" && saveEdit(cat.id)
+                          }
+                        />
+                      ) : (
+                        <span className="font-medium text-sm text-gray-700">
+                          {cat.name}
+                        </span>
+                      )}
                     </div>
-                    <div className="bg-red-50 p-6 rounded-xl border border-red-100 mt-8">
-                        <h3 className="font-bold text-red-700 mb-2 flex items-center gap-2"><Trash size={20}/> Очистка данных</h3>
-                        {!showClearConfirm ? (
-                            <div>
-                                <p className="text-sm text-red-600 mb-4">Это действие полностью удалит все задачи, настройки и историю из этого браузера.</p>
-                                <button onClick={() => setShowClearConfirm(true)} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-medium">Очистить кеш</button>
-                            </div>
-                        ) : (
-                            <div className="bg-white p-4 rounded-lg border border-red-200 shadow-sm animate-in fade-in">
-                                <p className="font-bold text-red-700 mb-2">Вы точно уверены?</p>
-                                <p className="text-sm text-gray-600 mb-4">Все данные будут безвозвратно удалены. Приложение перезагрузится.</p>
-                                <div className="flex gap-3">
-                                    <button onClick={handleClearCache} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-bold" disabled={isCleaning}>{isCleaning ? "Очищаю..." : "Да, продолжить"}</button>
-                                    <button onClick={() => setShowClearConfirm(false)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors text-sm" disabled={isCleaning}>Нет</button>
-                                </div>
-                            </div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => startEdit(cat)}
+                        className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      {cat.type === "custom" && (
+                        <button
+                          onClick={() => onDelete(cat.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {customCount < 3 && (
+                <div className="mt-6 pt-6 border-t border-gray-100">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Добавить новую категорию
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      className="flex-1 border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                      placeholder="Название (макс. 18 символов)"
+                      value={newCatName}
+                      onChange={(e) => setNewCatName(e.target.value)}
+                      maxLength={18}
+                    />
+                    <button
+                      onClick={handleAdd}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium flex items-center gap-2"
+                    >
+                      <Plus size={16} /> Добавить
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                    <AlertCircle size={12} /> Только буквы, цифры и пробелы
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      const InboxView = ({
+        tasks,
+        onAddTask,
+        onStartProcess,
+        getProjectName,
+        categories,
+      }) => {
+        const [newItem, setNewItem] = useState("");
+        const [category, setCategory] = useState("");
+
+        useEffect(() => {
+          if (categories.length > 0 && !category) {
+            setCategory(categories[0].name);
+          }
+        }, [categories]);
+
+        const handleSubmit = (e) => {
+          e.preventDefault();
+          if (!newItem.trim()) return;
+          onAddTask({
+            title: newItem,
+            category: category || categories[0].name,
+          });
+          setNewItem("");
+        };
+
+        return (
+          <div className="space-y-6">
+            <header className="flex justify-between items-end">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">Входящие</h2>
+                <p className="text-gray-500">Сбор задач.</p>
+              </div>
+              {tasks.length > 0 && (
+                <button
+                  onClick={onStartProcess}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                >
+                  <RefreshCw size={18} />
+                  Сортировка ({tasks.length})
+                </button>
+              )}
+            </header>
+            <form
+              onSubmit={handleSubmit}
+              className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row gap-4"
+            >
+              <input
+                type="text"
+                value={newItem}
+                onChange={(e) => setNewItem(e.target.value)}
+                placeholder="Что нужно сделать?"
+                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                autoFocus
+              />
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 outline-none cursor-pointer"
+              >
+                {categories.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="submit"
+                className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800"
+              >
+                <Plus size={20} />
+              </button>
+            </form>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              {tasks.length === 0 ? (
+                <div className="p-8 text-center text-gray-400">
+                  Входящие пусты
+                </div>
+              ) : (
+                <ul>
+                  {tasks.map((task) => (
+                    <li
+                      key={task.id}
+                      className="border-b last:border-0 p-4 flex justify-between hover:bg-gray-50"
+                    >
+                      <div>
+                        <span className="font-medium block">{task.title}</span>
+                        {task.projectId && (
+                          <span className="text-xs text-blue-500 flex items-center gap-1 mt-1">
+                            <Folder size={10} />{" "}
+                            {getProjectName(task.projectId)}
+                          </span>
                         )}
-                    </div>
+                      </div>
+                      <span
+                        className="text-xs px-2 py-1 rounded h-fit text-white"
+                        style={{
+                          backgroundColor:
+                            categories.find((c) => c.name === task.category)
+                              ?.color || "#ccc",
+                        }}
+                      >
+                        {task.category}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      const TodayView = ({
+        tasks,
+        onComplete,
+        onDelete,
+        activeTimer,
+        onStart,
+        onPause,
+        onStop,
+        getDuration,
+        getProjectName,
+        categories,
+      }) => {
+        if (activeTimer.taskId) {
+          const activeTask = tasks.find((t) => t.id === activeTimer.taskId);
+          if (activeTask && activeTask.status === "today") {
+            const catColor =
+              categories.find((c) => c.name === activeTask.category)?.color ||
+              "#ccc";
+            return (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-8 animate-in fade-in duration-500">
+                <div className="bg-indigo-100 p-6 rounded-full text-indigo-600 shadow-inner">
+                  <Activity size={64} className="animate-pulse" />
                 </div>
+                <div>
+                  <div className="text-sm text-gray-500 uppercase tracking-widest mb-2">
+                    Фокус режим
+                  </div>
+                  <h2 className="text-4xl font-bold text-gray-800 max-w-2xl leading-tight">
+                    {activeTask.title}
+                  </h2>
+                  {activeTask.projectId && (
+                    <div className="mt-2 text-blue-500 font-medium flex items-center justify-center gap-1">
+                      <Folder size={16} />{" "}
+                      {getProjectName(activeTask.projectId)}
+                    </div>
+                  )}
+                  <div
+                    className="mt-2 inline-block px-3 py-1 rounded text-white"
+                    style={{ backgroundColor: catColor }}
+                  >
+                    {activeTask.category}
+                  </div>
+                </div>
+                <div className="text-7xl font-mono font-bold text-indigo-600 tabular-nums">
+                  {formatTime(getDuration(activeTask.id))}
+                </div>
+                <div className="flex gap-4">
+                  {activeTimer.isRunning ? (
+                    <button
+                      onClick={onPause}
+                      className="flex items-center gap-2 px-8 py-4 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl text-xl font-bold shadow-lg transition-all transform hover:scale-105"
+                    >
+                      <Pause /> Пауза
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => onStart(activeTask.id)}
+                      className="flex items-center gap-2 px-8 py-4 bg-green-500 hover:bg-green-600 text-white rounded-xl text-xl font-bold shadow-lg transition-all transform hover:scale-105"
+                    >
+                      <Play /> Продолжить
+                    </button>
+                  )}
+                  <button
+                    onClick={onStop}
+                    className="flex items-center gap-2 px-8 py-4 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xl font-bold shadow-lg transition-all transform hover:scale-105"
+                  >
+                    <Square /> Стоп
+                  </button>
+                </div>
+                <div className="mt-8 text-gray-400 text-sm">
+                  Остальные задачи скрыты для концентрации
+                </div>
+              </div>
             );
+          }
+        }
+
+        return (
+          <div className="space-y-6">
+            <header className="flex items-center gap-3">
+              <div className="p-3 rounded-lg bg-indigo-100 text-indigo-600">
+                <CheckSquare />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">Сегодня</h2>
+                <p className="text-gray-500">Приоритетные задачи.</p>
+              </div>
+            </header>
+            <div className="bg-white rounded-xl shadow-md border border-indigo-100 overflow-hidden">
+              {tasks.length === 0 ? (
+                <div className="p-12 text-center flex flex-col items-center">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-4">
+                    <CheckCircle size={32} />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Всё сделано!
+                  </h3>
+                </div>
+              ) : (
+                <ul className="divide-y divide-gray-100">
+                  {tasks.map((task) => (
+                    <TaskItem
+                      key={task.id}
+                      task={task}
+                      onComplete={onComplete}
+                      onDelete={onDelete}
+                      activeTimer={activeTimer}
+                      onStart={onStart}
+                      onPause={onPause}
+                      onStop={onStop}
+                      getDuration={getDuration}
+                      getProjectName={getProjectName}
+                      categories={categories}
+                    />
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      const ProcessWizard = ({
+        tasks,
+        onUpdateTask,
+        onComplete,
+        categories,
+      }) => {
+        const inboxTasks = tasks.filter((t) => t.status === "inbox");
+        const [step, setStep] = useState(1);
+        const [data, setData] = useState({});
+
+        if (inboxTasks.length === 0)
+          return (
+            <div className="text-center py-20">
+              <CheckCircle size={48} className="mx-auto text-green-500 mb-4" />
+              <h2 className="text-2xl font-bold">Все чисто!</h2>
+              <button
+                onClick={onComplete}
+                className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded"
+              >
+                Готово
+              </button>
+            </div>
+          );
+
+        const task = inboxTasks[0];
+        const catColor =
+          categories.find((c) => c.name === task.category)?.color || "#ccc";
+        const next = (status, updates = {}) => {
+          onUpdateTask(task.id, { status, ...updates });
+          setStep(1);
+          setData({});
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<System4x7App />);
+        return (
+          <div className="max-w-xl mx-auto mt-10">
+            <div className="text-center mb-8">
+              <div
+                className="inline-block px-3 py-1 rounded text-xs mb-2 text-white"
+                style={{ backgroundColor: catColor }}
+              >
+                {task.category}
+              </div>
+              <h2 className="text-2xl font-bold">{task.title}</h2>
+            </div>
+            <div className="bg-gray-100 p-8 rounded-xl">
+              {step === 1 && (
+                <div>
+                  <h3 className="text-xl text-center font-bold mb-6">
+                    Нужно ли с этим что-то делать?
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      onClick={() => setStep(2)}
+                      className="p-4 bg-white rounded border-2 border-transparent hover:border-indigo-500 text-indigo-600 font-bold"
+                    >
+                      Да
+                    </button>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => next("reference")}
+                        className="w-full p-3 bg-white rounded text-sm"
+                      >
+                        Нет, Информация
+                      </button>
+                      <button
+                        onClick={() =>
+                          onUpdateTask(task.id, { status: "deleted" })
+                        }
+                        className="w-full p-3 bg-white rounded text-sm text-red-500"
+                      >
+                        Мусор
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {step === 2 && (
+                <div>
+                  <h3 className="text-xl text-center font-bold mb-6">
+                    Это одно действие?
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      onClick={() => setStep(3)}
+                      className="p-4 bg-white rounded border-2 border-transparent hover:border-indigo-500 text-indigo-600 font-bold"
+                    >
+                      Да
+                    </button>
+                    <div className="bg-white p-4 rounded space-y-2">
+                      <input
+                        placeholder="Цель проекта"
+                        className="w-full p-2 border rounded"
+                        onChange={(e) =>
+                          setData({ ...data, outcome: e.target.value })
+                        }
+                      />
+                      <input
+                        placeholder="Первый шаг"
+                        className="w-full p-2 border rounded"
+                        onChange={(e) =>
+                          setData({ ...data, firstStep: e.target.value })
+                        }
+                      />
+                      <button
+                        disabled={!data.outcome}
+                        onClick={() => next("projects", { project: data })}
+                        className="w-full bg-blue-600 text-white py-2 rounded"
+                      >
+                        Создать проект
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {step === 3 && (
+                <div>
+                  <h3 className="text-xl text-center font-bold mb-6">
+                    Займет меньше 2 минут?
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      onClick={() => next("today")}
+                      className="p-4 bg-white rounded border-2 border-green-500 text-green-600 font-bold"
+                    >
+                      Да (Сделать сейчас)
+                    </button>
+                    <button
+                      onClick={() => setStep(4)}
+                      className="p-4 bg-white rounded"
+                    >
+                      Нет, дольше
+                    </button>
+                  </div>
+                </div>
+              )}
+              {step === 4 && (
+                <div>
+                  <h3 className="text-xl text-center font-bold mb-6">
+                    Когда сделать?
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      onClick={() => next("today")}
+                      className="p-4 bg-white rounded border-2 border-indigo-500 text-indigo-600 font-bold"
+                    >
+                      Как можно скорее (Сегодня)
+                    </button>
+                    <button
+                      onClick={() => next("someday")}
+                      className="p-4 bg-white rounded"
+                    >
+                      Когда-нибудь
+                    </button>
+                    <div className="col-span-2 bg-white p-4 rounded">
+                      <input
+                        type="datetime-local"
+                        className="w-full border p-2 rounded mb-2"
+                        onChange={(e) =>
+                          setData({ ...data, date: e.target.value })
+                        }
+                      />
+                      <button
+                        disabled={!data.date}
+                        onClick={() => next("calendar", { dueDate: data.date })}
+                        className="w-full bg-purple-600 text-white py-2 rounded"
+                      >
+                        В календарь
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      const ProductivityView = ({ tasks, getProjectName, categories }) => {
+        const stats = useMemo(() => {
+          let totalTime = 0;
+          let todayTime = 0;
+          const catData = {};
+          const taskData = [];
+          const history = [];
+          const startOfDay = new Date();
+          startOfDay.setHours(0, 0, 0, 0);
+
+          tasks.forEach((task) => {
+            if (task.sessions) {
+              task.sessions.forEach((session) => {
+                totalTime += session.duration;
+                if (session.start >= startOfDay.getTime())
+                  todayTime += session.duration;
+                catData[task.category] =
+                  (catData[task.category] || 0) + session.duration;
+                history.push({
+                  task: task.title,
+                  category: task.category,
+                  date: session.end,
+                  duration: session.duration,
+                });
+              });
+            }
+            if (task.totalTime > 0)
+              taskData.push({
+                name: task.title.substring(0, 15) + "...",
+                time: Math.floor(task.totalTime / 1000 / 60),
+              });
+          });
+
+          const pieData = Object.keys(catData).map((key) => {
+            const cat = categories.find((c) => c.name === key);
+            return {
+              name: key,
+              value: catData[key],
+              color: cat ? cat.color : "#9ca3af",
+            };
+          });
+
+          history.sort((a, b) => b.date - a.date);
+          return {
+            totalTime,
+            todayTime,
+            pieData,
+            taskData: taskData.sort((a, b) => b.time - a.time).slice(0, 5),
+            history,
+          };
+        }, [tasks, categories]);
+
+        const generateMonthlyReport = () => {
+          const now = new Date();
+          const currentMonth = now.getMonth();
+          const currentYear = now.getFullYear();
+          const monthName = now.toLocaleString("ru-RU", { month: "long" });
+
+          const sessionsThisMonth = [];
+          const tasksCompletedThisMonth = [];
+          let monthTotalTime = 0;
+          const catTime = {};
+          const projectTime = {};
+          const dailyActiveTime = {};
+
+          tasks.forEach((task) => {
+            if (task.sessions) {
+              task.sessions.forEach((s) => {
+                const sessionDate = new Date(s.end);
+                if (
+                  sessionDate.getMonth() === currentMonth &&
+                  sessionDate.getFullYear() === currentYear
+                ) {
+                  sessionsThisMonth.push({
+                    ...s,
+                    taskTitle: task.title,
+                    category: task.category,
+                    projectId: task.projectId,
+                  });
+                  monthTotalTime += s.duration;
+                  catTime[task.category] =
+                    (catTime[task.category] || 0) + s.duration;
+
+                  if (task.projectId) {
+                    projectTime[task.projectId] =
+                      (projectTime[task.projectId] || 0) + s.duration;
+                  }
+
+                  const dayKey = sessionDate.getDate();
+                  dailyActiveTime[dayKey] =
+                    (dailyActiveTime[dayKey] || 0) + s.duration;
+                }
+              });
+            }
+
+            if (task.status === "done") {
+              const workedOnThisMonth = task.sessions?.some((s) => {
+                const d = new Date(s.end);
+                return (
+                  d.getMonth() === currentMonth &&
+                  d.getFullYear() === currentYear
+                );
+              });
+              if (workedOnThisMonth || task.sessions?.length === 0) {
+                tasksCompletedThisMonth.push(task);
+              }
+            }
+          });
+
+          const sortedCategories = Object.entries(catTime).sort(
+            (a, b) => b[1] - a[1]
+          );
+          const totalCompleted = tasksCompletedThisMonth.length;
+          const avgTime =
+            totalCompleted > 0
+              ? Math.floor(monthTotalTime / totalCompleted)
+              : 0;
+
+          const daysInMonth = new Date(
+            currentYear,
+            currentMonth + 1,
+            0
+          ).getDate();
+          let daysWithActivity = Object.keys(dailyActiveTime).length;
+          let emptyDays = daysInMonth - daysWithActivity;
+          let daysMoreThan2Hours = Object.values(dailyActiveTime).filter(
+            (t) => t > 2 * 60 * 60 * 1000
+          ).length;
+
+          const sortedDays = Object.entries(dailyActiveTime).sort(
+            (a, b) => b[1] - a[1]
+          );
+          const maxDay = sortedDays.length > 0 ? sortedDays[0][0] : "-";
+          const minDay =
+            sortedDays.length > 0 ? sortedDays[sortedDays.length - 1][0] : "-";
+
+          const longestTask = [...tasks].sort(
+            (a, b) => (b.totalTime || 0) - (a.totalTime || 0)
+          )[0];
+          const shortestTask = [...tasks]
+            .filter((t) => t.totalTime > 0)
+            .sort((a, b) => (a.totalTime || 0) - (b.totalTime || 0))[0];
+
+          let report = `Месяц: ${monthName.toUpperCase()} ${currentYear}\n`;
+          report += `Всего выполненных задач: ${totalCompleted}\n`;
+          report += `Общее рабочее время: ${formatTimeText(monthTotalTime)}\n`;
+          report += `Среднее время на задачу: ${formatTimeText(avgTime)}\n\n`;
+
+          report += `=== Метрика продуктивности по категориям ===\n`;
+          sortedCategories.forEach(([cat, time]) => {
+            const percent =
+              monthTotalTime > 0
+                ? ((time / monthTotalTime) * 100).toFixed(1)
+                : 0;
+            report += `${cat}: ${formatTimeText(time)} (${percent}%)\n`;
+          });
+          report += `\n`;
+
+          report += `=== Вклад по проектам ===\n`;
+          Object.entries(projectTime).forEach(([pid, time]) => {
+            const pName = getProjectName(Number(pid)) || "Удаленный проект";
+            report += `Проект: ${pName}\n`;
+            report += ` • Активность — ${formatTimeText(time)}\n`;
+          });
+          if (Object.keys(projectTime).length === 0)
+            report += "Нет активности по проектам.\n";
+          report += `\n`;
+
+          report += `=== Список всех выполненных задач ===\n`;
+          tasksCompletedThisMonth.forEach((t) => {
+            const lastSessionDate =
+              t.sessions && t.sessions.length > 0
+                ? new Date(
+                    t.sessions[t.sessions.length - 1].end
+                  ).toLocaleDateString()
+                : "Нет даты";
+            const pName = t.projectId
+              ? getProjectName(t.projectId)
+              : "Без проекта";
+            report += `${lastSessionDate} — ${t.title} — ${formatTimeText(
+              t.totalTime
+            )} — ${t.category} — ${pName}\n`;
+          });
+          report += `\n`;
+
+          report += `=== Саммари месяца ===\n`;
+          report += `Главная категория месяца: ${
+            sortedCategories.length > 0 ? sortedCategories[0][0] : "-"
+          }\n`;
+          report += `Самая длинная задача: ${
+            longestTask ? longestTask.title : "-"
+          }\n`;
+          report += `Самая короткая задача: ${
+            shortestTask ? shortestTask.title : "-"
+          }\n`;
+          report += `День максимальной продуктивности: ${maxDay} число\n`;
+          report += `День минимальной продуктивности: ${minDay} число\n`;
+          report += `Количество дней с >2 часов активности: ${daysMoreThan2Hours}\n`;
+          report += `Количество пустых дней: ${emptyDays}\n\n`;
+
+          report += `=== Итоги и выводы месяца ===\n`;
+          report += `(Место для выводов GPT)\n`;
+
+          const blob = new Blob([report], { type: "text/plain" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `metrica_${monthName}_${currentYear}.txt`;
+          a.click();
+          URL.revokeObjectURL(url);
+        };
+
+        if (!window.Recharts)
+          return (
+            <div className="space-y-6 text-red-600">
+              Ошибка загрузки графиков.
+            </div>
+          );
+
+        return (
+          <div className="space-y-6">
+            <header className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-lg bg-indigo-100 text-indigo-600">
+                  <BarChart2 />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Продуктивность
+                </h2>
+              </div>
+              <button
+                onClick={generateMonthlyReport}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm font-medium text-sm"
+              >
+                <FileText size={16} />
+                Загрузить метрику месяца
+              </button>
+            </header>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-indigo-100">
+                <div className="text-gray-500 text-xs uppercase">
+                  Время за сегодня
+                </div>
+                <div className="text-2xl font-bold text-indigo-600">
+                  {formatTime(stats.todayTime)}
+                </div>
+              </div>
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <div className="text-gray-500 text-xs uppercase">
+                  Всего времени
+                </div>
+                <div className="text-2xl font-bold text-gray-800">
+                  {formatTime(stats.totalTime)}
+                </div>
+              </div>
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <div className="text-gray-500 text-xs uppercase">
+                  Задач в работе
+                </div>
+                <div className="text-2xl font-bold text-gray-800">
+                  {
+                    tasks.filter(
+                      (t) => t.status !== "done" && t.status !== "inbox"
+                    ).length
+                  }
+                </div>
+              </div>
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <div className="text-gray-500 text-xs uppercase">
+                  Завершено задач
+                </div>
+                <div className="text-2xl font-bold text-green-600">
+                  {tasks.filter((t) => t.status === "done").length}
+                </div>
+              </div>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6 h-80">
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col">
+                <h3 className="font-bold text-gray-700 mb-4">
+                  Время по категориям
+                </h3>
+                <div className="flex-1">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={stats.pieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {stats.pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(val) => formatTime(val)} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col">
+                <h3 className="font-bold text-gray-700 mb-4">
+                  Топ задач (мин)
+                </h3>
+                <div className="flex-1">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={stats.taskData} layout="vertical">
+                      <XAxis type="number" hide />
+                      <YAxis
+                        dataKey="name"
+                        type="category"
+                        width={100}
+                        style={{ fontSize: "12px" }}
+                      />
+                      <Tooltip />
+                      <Bar
+                        dataKey="time"
+                        fill="#6366f1"
+                        radius={[0, 4, 4, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="p-4 border-b border-gray-100 font-bold text-gray-700">
+                История активности
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 text-gray-500 sticky top-0">
+                    <tr>
+                      <th className="p-3 font-medium">Дата</th>
+                      <th className="p-3 font-medium">Задача</th>
+                      <th className="p-3 font-medium">Категория</th>
+                      <th className="p-3 font-medium text-right">Время</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {stats.history.map((log, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="p-3 text-gray-500">
+                          {new Date(log.date).toLocaleString("ru-RU", {
+                            month: "numeric",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </td>
+                        <td className="p-3 font-medium text-gray-700">
+                          {log.task}
+                        </td>
+                        <td className="p-3">
+                          <span
+                            className="px-2 py-1 rounded text-xs text-white"
+                            style={{
+                              backgroundColor:
+                                categories.find((c) => c.name === log.category)
+                                  ?.color || "#ccc",
+                            }}
+                          >
+                            {log.category}
+                          </span>
+                        </td>
+                        <td className="p-3 text-right font-mono text-indigo-600">
+                          {formatTime(log.duration)}
+                        </td>
+                      </tr>
+                    ))}
+                    {stats.history.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan="4"
+                          className="p-8 text-center text-gray-400"
+                        >
+                          История пуста
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      // --- CALENDAR VIEW WITH DONE CHECKBOXES (без прозрачности) ---
+
+      const CalendarView = ({
+        tasks,
+        categories,
+        calendarDate,
+        onPrevMonth,
+        onNextMonth,
+        onUpdateTaskDate,
+        getProjectName,
+        onMarkDone,
+      }) => {
+        const [draggedTaskId, setDraggedTaskId] = useState(null);
+        const [selectedTask, setSelectedTask] = useState(null);
+
+        const datedTasks = useMemo(
+          () => tasks.filter((t) => t.dueDate),
+          [tasks]
+        );
+
+        const { year, month } = calendarDate;
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+
+        const startWeekDay = (firstDay.getDay() + 6) % 7; // Monday=0
+        const daysInMonth = lastDay.getDate();
+        const totalCells = Math.ceil((startWeekDay + daysInMonth) / 7) * 7;
+
+        const tasksByDay = useMemo(() => {
+          const map = {};
+          datedTasks.forEach((task) => {
+            const d = new Date(task.dueDate);
+            if (isNaN(d.getTime())) return;
+            if (d.getMonth() !== month || d.getFullYear() !== year) return;
+            const day = d.getDate();
+            if (!map[day]) map[day] = [];
+            map[day].push(task);
+          });
+          Object.keys(map).forEach((day) => {
+            map[day].sort((a, b) => {
+              const da = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+              const db = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+              return da - db;
+            });
+          });
+          return map;
+        }, [datedTasks, month, year]);
+
+        const handleDropOnDay = (day) => {
+          if (!draggedTaskId) return;
+          const newDate = new Date(year, month, day);
+          onUpdateTaskDate(draggedTaskId, newDate);
+          setDraggedTaskId(null);
+        };
+
+        const monthLabel = new Date(year, month, 1).toLocaleString("ru-RU", {
+          month: "long",
+          year: "numeric",
+        });
+
+        const weekdayLabels = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+
+        return (
+          <div className="space-y-6">
+            <header className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-lg bg-purple-100 text-purple-600">
+                  <CalendarIcon />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    Календарь
+                  </h2>
+                  <p className="text-gray-500 text-sm">
+                    В календаре отображаются только задачи с датой
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onPrevMonth}
+                  className="px-2 py-1 rounded-lg border bg-white hover:bg-gray-50 text-sm"
+                >
+                  ←
+                </button>
+                <div className="min-w-[160px] text-center font-semibold capitalize">
+                  {monthLabel}
+                </div>
+                <button
+                  onClick={onNextMonth}
+                  className="px-2 py-1 rounded-lg border bg-white hover:bg-gray-50 text-sm"
+                >
+                  →
+                </button>
+              </div>
+            </header>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <div className="grid grid-cols-7 text-xs font-semibold text-center text-gray-500 mb-2">
+                {weekdayLabels.map((d) => (
+                  <div key={d} className="py-2">
+                    {d}
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-1 text-xs">
+                {Array.from({ length: totalCells }).map((_, index) => {
+                  const dayNumber = index - startWeekDay + 1;
+                  const isCurrentMonth =
+                    dayNumber >= 1 && dayNumber <= daysInMonth;
+
+                  const dayTasks = isCurrentMonth
+                    ? tasksByDay[dayNumber] || []
+                    : [];
+
+                  const isToday = (() => {
+                    if (!isCurrentMonth) return false;
+                    const now = new Date();
+                    return (
+                      now.getFullYear() === year &&
+                      now.getMonth() === month &&
+                      now.getDate() === dayNumber
+                    );
+                  })();
+
+                  return (
+                    <div
+                      key={index}
+                      className={`min-h-[90px] border rounded-lg p-1.5 flex flex-col ${
+                        isCurrentMonth ? "bg-white" : "bg-gray-50 text-gray-300"
+                      }`}
+                      onDragOver={(e) => {
+                        if (!isCurrentMonth) return;
+                        e.preventDefault();
+                      }}
+                      onDrop={(e) => {
+                        if (!isCurrentMonth) return;
+                        e.preventDefault();
+                        handleDropOnDay(dayNumber);
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span
+                          className={`text-[11px] font-medium ${
+                            isCurrentMonth ? "text-gray-700" : "text-gray-300"
+                          }`}
+                        >
+                          {isCurrentMonth ? dayNumber : ""}
+                        </span>
+                        {isToday && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                            сегодня
+                          </span>
+                        )}
+                      </div>
+
+                      {isCurrentMonth && dayTasks.length > 0 && (
+                        <div className="flex-1 space-y-0.5 overflow-hidden">
+                          {dayTasks.slice(0, 3).map((task) => {
+                            const dateObj = new Date(task.dueDate);
+                            const hasTime =
+                              !isNaN(dateObj.getTime()) &&
+                              (dateObj.getHours() !== 0 ||
+                                dateObj.getMinutes() !== 0);
+                            const timeStr = hasTime
+                              ? dateObj.toLocaleTimeString("ru-RU", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : null;
+
+                            const cat = categories.find(
+                              (c) => c.name === task.category
+                            );
+                            const catColor = cat ? cat.color : "#9ca3af";
+
+                            const isDone = task.status === "done";
+
+                            return (
+                              <div
+                                key={task.id}
+                                className="flex items-center gap-1 px-1 py-0.5 rounded cursor-pointer hover:bg-indigo-50 group transition-colors"
+                                draggable
+                                onDragStart={() => setDraggedTaskId(task.id)}
+                                onClick={() => setSelectedTask(task)}
+                              >
+                                {/* чекбокс выполнения */}
+                                <button
+                                  className={`flex items-center justify-center w-3.5 h-3.5 rounded border transition-all mr-0.5 ${
+                                    isDone
+                                      ? "bg-green-500 border-green-500"
+                                      : "border-gray-300 bg-white hover:border-green-500"
+                                  }`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!isDone) {
+                                      onMarkDone(task.id);
+                                    }
+                                  }}
+                                  title="Отметить выполненной"
+                                >
+                                  {isDone && (
+                                    <Check size={9} className="text-white" />
+                                  )}
+                                </button>
+
+                                {/* цвет категории */}
+                                <span
+                                  className="w-1 h-3 rounded-full"
+                                  style={{
+                                    backgroundColor: catColor,
+                                  }}
+                                />
+
+                                <div className="flex-1 min-w-0">
+                                  <div
+                                    className={`truncate text-[11px] ${
+                                      isDone
+                                        ? "line-through text-gray-400"
+                                        : "text-gray-800"
+                                    }`}
+                                  >
+                                    {task.title}
+                                  </div>
+                                  {timeStr && (
+                                    <div className="text-[10px] text-gray-400">
+                                      {timeStr}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {dayTasks.length > 3 && (
+                            <button
+                              className="w-full text-[10px] text-left text-indigo-600 mt-0.5 px-1 py-0.5 rounded hover:bg-indigo-50"
+                              onClick={() =>
+                                setSelectedTask({
+                                  _day: dayNumber,
+                                  _list: dayTasks,
+                                })
+                              }
+                            >
+                              ещё {dayTasks.length - 3}…
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {selectedTask && (
+              <CalendarTaskModal
+                task={selectedTask}
+                categories={categories}
+                getProjectName={getProjectName}
+                onClose={() => setSelectedTask(null)}
+                onMarkDone={onMarkDone}
+              />
+            )}
+          </div>
+        );
+      };
+
+      const CalendarTaskModal = ({
+        task,
+        categories,
+        getProjectName,
+        onClose,
+        onMarkDone,
+      }) => {
+        const isDayList = task._list && Array.isArray(task._list);
+
+        const renderSingleTask = (t) => {
+          const cat = categories.find((c) => c.name === t.category);
+          const catColor = cat ? cat.color : "#9ca3af";
+
+          const d = t.dueDate ? new Date(t.dueDate) : null;
+          const dateStr = d
+            ? d.toLocaleString("ru-RU", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "—";
+
+          const projectName = t.projectId ? getProjectName(t.projectId) : null;
+
+          const durationText = formatTimeText(t.totalTime || 0);
+          const isDone = t.status === "done";
+
+          return (
+            <div>
+              <h3
+                className={`text-lg font-bold mb-1 ${
+                  isDone ? "text-gray-500 line-through" : "text-gray-800"
+                }`}
+              >
+                {t.title}
+              </h3>
+              <div className="flex items-center gap-2 mb-4">
+                <span
+                  className="text-xs px-2 py-1 rounded text-white"
+                  style={{ backgroundColor: catColor }}
+                >
+                  {t.category}
+                </span>
+                {projectName && (
+                  <span className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-700 flex items-center gap-1">
+                    <Folder size={12} />
+                    {projectName}
+                  </span>
+                )}
+                <span
+                  className={`text-xs px-2 py-1 rounded ${getStatusColor(
+                    t.status
+                  )}`}
+                >
+                  {getStatusLabel(t.status)}
+                </span>
+              </div>
+
+              <div className="space-y-2 text-sm text-gray-700">
+                <div>
+                  <span className="font-semibold">Дата и время: </span>
+                  {dateStr}
+                </div>
+                <div>
+                  <span className="font-semibold">Длительность: </span>
+                  {durationText}
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <button
+                  onClick={() => {
+                    if (!isDone) onMarkDone(t.id);
+                  }}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    isDone
+                      ? "bg-green-100 text-green-700 cursor-default"
+                      : "bg-green-600 text-white hover:bg-green-700"
+                  }`}
+                >
+                  <Check size={14} />
+                  {isDone ? "Задача выполнена" : "Отметить выполненной"}
+                </button>
+              </div>
+
+              <div className="text-xs text-gray-400 mt-3">
+                (Описание, файлы и другие поля можно добавить, когда появятся в
+                задаче)
+              </div>
+            </div>
+          );
+        };
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-5 relative">
+              <button
+                onClick={onClose}
+                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+              >
+                <X size={18} />
+              </button>
+
+              {isDayList ? (
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800 mb-3">
+                    Задачи за {task._day} число
+                  </h3>
+                  <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                    {task._list.map((t) => (
+                      <div
+                        key={t.id}
+                        className="p-3 border rounded-lg bg-gray-50"
+                      >
+                        {renderSingleTask(t)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                renderSingleTask(task)
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      const ListView = ({
+        title,
+        icon,
+        tasks,
+        color,
+        showDelegateInfo,
+        onDelete,
+        onComplete,
+        activeTimer,
+        onStart,
+        onPause,
+        onStop,
+        getDuration,
+        getProjectName,
+        categories,
+      }) => (
+        <div className="space-y-6">
+          <header className="flex items-center gap-3">
+            <div className={`p-3 rounded-lg ${color || "bg-gray-100"}`}>
+              {icon}
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
+            <span className="ml-auto text-gray-400 text-sm">
+              {tasks.length} items
+            </span>
+          </header>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            {tasks.length === 0 ? (
+              <div className="p-8 text-center text-gray-400">Список пуст</div>
+            ) : (
+              <ul>
+                {tasks.map((task) => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    onComplete={onComplete}
+                    onDelete={onDelete}
+                    activeTimer={activeTimer}
+                    onStart={onStart}
+                    onPause={onPause}
+                    onStop={onStop}
+                    getDuration={getDuration}
+                    getProjectName={getProjectName}
+                    categories={categories}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      );
+
+      const ProjectsView = ({
+        allTasks,
+        projects,
+        onAddTask,
+        onDelete,
+        onComplete,
+        activeTimer,
+        onStart,
+        onPause,
+        onStop,
+        getDuration,
+        categories,
+      }) => {
+        const [newTaskTitles, setNewTaskTitles] = useState({});
+
+        const handleAddTask = (projectId, projectCategory) => {
+          const title = newTaskTitles[projectId];
+          if (!title || !title.trim()) return;
+          onAddTask({
+            title,
+            category: projectCategory,
+            projectId: projectId,
+            status: "inbox",
+          });
+          setNewTaskTitles((prev) => ({ ...prev, [projectId]: "" }));
+          alert('Задача добавлена во "Входящие"');
+        };
+
+        return (
+          <div className="space-y-6">
+            <header className="flex items-center gap-3">
+              <div className="p-3 rounded-lg bg-blue-100 text-blue-600">
+                <Layers />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800">Проекты</h2>
+            </header>
+            <div className="grid gap-6 md:grid-cols-2">
+              {projects.length === 0 ? (
+                <div className="col-span-full text-center text-gray-400 py-10">
+                  Нет проектов
+                </div>
+              ) : (
+                projects.map((project) => {
+                  const linkedTasks = allTasks.filter(
+                    (t) => t.projectId === project.id && t.status !== "done"
+                  );
+                  return (
+                    <div
+                      key={project.id}
+                      className={`bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col h-full relative ${
+                        activeTimer.taskId === project.id
+                          ? "ring-2 ring-indigo-500"
+                          : ""
+                      }`}
+                    >
+                      <div className="absolute top-4 right-4 flex gap-2">
+                        <button
+                          onClick={() => onComplete(project.id)}
+                          className="text-gray-300 hover:text-green-500"
+                        >
+                          <CheckCircle size={20} />
+                        </button>
+                      </div>
+                      <div className="mb-4 border-b border-gray-100 pb-4">
+                        <div className="text-xs uppercase tracking-wide text-blue-600 font-bold mb-1">
+                          Проект
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-2">
+                          {project.title}
+                        </h3>
+                        <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded mb-2">
+                          <strong>Цель:</strong> {project.project?.outcome}
+                        </div>
+                        {linkedTasks.length > 0 && (
+                          <div className="mt-3">
+                            <div className="text-xs font-bold text-gray-400 uppercase mb-1">
+                              Активные задачи ({linkedTasks.length})
+                            </div>
+                            <ul className="space-y-1 max-h-32 overflow-y-auto">
+                              {linkedTasks.map((lt) => (
+                                <li
+                                  key={lt.id}
+                                  className="text-xs flex items-center justify-between text-gray-600 bg-gray-50 p-1 rounded"
+                                >
+                                  <span>{lt.title}</span>
+                                  <span
+                                    className={`px-1.5 py-0.5 rounded text-[10px] ${getStatusColor(
+                                      lt.status
+                                    )}`}
+                                  >
+                                    {getStatusLabel(lt.status)}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                      <div className="mb-4">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="Новая задача в проект..."
+                            className="flex-1 text-sm border rounded px-2 py-1"
+                            value={newTaskTitles[project.id] || ""}
+                            onChange={(e) =>
+                              setNewTaskTitles({
+                                ...newTaskTitles,
+                                [project.id]: e.target.value,
+                              })
+                            }
+                            onKeyDown={(e) =>
+                              e.key === "Enter" &&
+                              handleAddTask(project.id, project.category)
+                            }
+                          />
+                          <button
+                            onClick={() =>
+                              handleAddTask(project.id, project.category)
+                            }
+                            className="bg-indigo-600 text-white p-1.5 rounded hover:bg-indigo-700"
+                            title="Добавить во Входящие"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
+                        <div className="text-[10px] text-gray-400 mt-1 text-right">
+                          Попадает во "Входящие"
+                        </div>
+                      </div>
+                      <div className="mt-auto pt-2 flex justify-between items-end">
+                        <div>
+                          <div className="text-xs font-semibold text-gray-400 uppercase mb-2">
+                            Следующий шаг (Base)
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-800">
+                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                            {project.project?.firstStep}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <TimerControl
+                            taskId={project.id}
+                            isActive={activeTimer.taskId === project.id}
+                            isRunning={activeTimer.isRunning}
+                            accumulated={project.totalTime || 0}
+                            onStart={onStart}
+                            onPause={onPause}
+                            onStop={onStop}
+                            getDuration={getDuration}
+                          />
+                          <button
+                            onClick={() => onDelete(project.id)}
+                            className="text-xs text-red-300 hover:text-red-500 mt-2"
+                          >
+                            Архив
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      const DoneView = ({
+        tasks,
+        onDelete,
+        onRepeat,
+        getProjectName,
+        categories,
+      }) => (
+        <div className="space-y-6">
+          <header className="flex items-center gap-3">
+            <div className="p-3 rounded-lg bg-green-100 text-green-600">
+              <CheckCircle />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800">Выполнено</h2>
+          </header>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            {tasks.length === 0 ? (
+              <div className="p-8 text-center text-gray-400">Пусто</div>
+            ) : (
+              <ul>
+                {tasks.map((task) => (
+                  <li
+                    key={task.id}
+                    className="p-4 flex items-center justify-between hover:bg-gray-50"
+                  >
+                    <div className="flex items-center gap-3 opacity-60">
+                      <Check size={16} className="text-green-600" />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium line-through decoration-gray-400">
+                            {task.title}
+                          </span>
+                          {task.projectId && (
+                            <span className="text-[10px] text-blue-500">
+                              <Folder size={10} className="inline" />{" "}
+                              {getProjectName(task.projectId)}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs ml-2 bg-gray-100 px-2 py-0.5 rounded">
+                          {formatTime(task.totalTime || 0)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => onRepeat(task.id)}
+                        className="p-2 text-gray-400 hover:text-indigo-600"
+                      >
+                        <RotateCcw size={18} />
+                      </button>
+                      <button
+                        onClick={() => onDelete(task.id)}
+                        className="p-2 text-gray-400 hover:text-red-600"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      );
+
+      const ReviewView = () => {
+        const [showClearConfirm, setShowClearConfirm] = useState(false);
+        const [isCleaning, setIsCleaning] = useState(false);
+
+        const handleClearCache = async () => {
+          setIsCleaning(true);
+          try {
+            localStorage.removeItem("system4x7_tasks_v2");
+            localStorage.removeItem("system4x7_categories");
+            localStorage.removeItem("system4x7_timer");
+            localStorage.clear();
+            sessionStorage.clear();
+          } catch (e) {
+            console.error("Storage clear failed", e);
+          }
+          try {
+            if ("caches" in window) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map((key) => caches.delete(key)));
+            }
+          } catch (e) {
+            console.error("Cache clear failed", e);
+          }
+          try {
+            if ("indexedDB" in window && window.indexedDB.databases) {
+              const dbs = await window.indexedDB.databases();
+              for (const db of dbs) {
+                window.indexedDB.deleteDatabase(db.name);
+              }
+            }
+          } catch (e) {
+            console.error("IDB clear failed", e);
+          }
+          try {
+            if ("serviceWorker" in window) {
+              const registrations =
+                await navigator.serviceWorker.getRegistrations();
+              for (const registration of registrations) {
+                await registration.unregister();
+              }
+            }
+          } catch (e) {
+            console.error("SW clear failed", e);
+          }
+          setTimeout(() => window.location.reload(), 100);
+        };
+
+        return (
+          <div className="space-y-6">
+            <header className="flex items-center gap-3">
+              <div className="p-3 rounded-lg bg-teal-100 text-teal-600">
+                <Play />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800">Ревизия</h2>
+            </header>
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 className="font-bold mb-4">Вечерняя рутина</h3>
+                <ul className="space-y-2">
+                  {[
+                    "Закрыть все вкладки таймеров",
+                    "Очистить физический стол",
+                    "Выбрать 3 задачи на завтра",
+                  ].map((i) => (
+                    <li key={i} className="flex gap-2">
+                      <input type="checkbox" />
+                      <span>{i}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 className="font-bold mb-4">Еженедельная рутина</h3>
+                <ul className="space-y-2">
+                  {[
+                    "Очистить папку Входящие",
+                    "Проверить список Как-нибудь",
+                    "Проверить Лист поручений",
+                    "Обновить Проекты",
+                  ].map((i) => (
+                    <li key={i} className="flex gap-2">
+                      <input type="checkbox" />
+                      <span>{i}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className="bg-red-50 p-6 rounded-xl border border-red-100 mt-8">
+              <h3 className="font-bold text-red-700 mb-2 flex items-center gap-2">
+                <Trash size={20} /> Очистка данных
+              </h3>
+              {!showClearConfirm ? (
+                <div>
+                  <p className="text-sm text-red-600 mb-4">
+                    Это действие полностью удалит все задачи, настройки и
+                    историю из этого браузера.
+                  </p>
+                  <button
+                    onClick={() => setShowClearConfirm(true)}
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-medium"
+                  >
+                    Очистить кеш
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-white p-4 rounded-lg border border-red-200 shadow-sm animate-in fade-in">
+                  <p className="font-bold text-red-700 mb-2">
+                    Вы точно уверены?
+                  </p>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Все данные будут безвозвратно удалены. Приложение
+                    перезагрузится.
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleClearCache}
+                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-bold"
+                      disabled={isCleaning}
+                    >
+                      {isCleaning ? "Очищаю..." : "Да, продолжить"}
+                    </button>
+                    <button
+                      onClick={() => setShowClearConfirm(false)}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors text-sm"
+                      disabled={isCleaning}
+                    >
+                      Нет
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<System4x7App />);
     </script>
-</body>
+  </body>
 </html>
+```
